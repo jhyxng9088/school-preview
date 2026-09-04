@@ -52,9 +52,9 @@ jobs:
           cp preview-control/preview/radical.css production-source/public/preview-dark-ui.css
           python3 preview-control/preview/patch.py production-source "$MAIN_BASELINE_SHA"
           grep -Fq 'S-Hub radical dashboard preview v2' production-source/public/preview-dark-ui.css
-          grep -Fq 'preview-dashboard-school' production-source/src/main.jsx
-          grep -Fq 'upcoming.slice(0, 2)' production-source/src/todo.jsx
-          grep -Fq 'slice(0, exam ? 1 : 2)' production-source/src/academic-shared.jsx
+          grep -Fq 'patchRadicalPreviewSource' production-source/src/radical-preview-patch.js
+          grep -Fq "import { patchRadicalPreviewSource } from './src/radical-preview-patch.js'" production-source/vite.config.js
+          grep -Fq 'next = patchRadicalPreviewSource(next, cleanId)' production-source/vite.config.js
 
       - name: Build preview
         working-directory: production-source
@@ -75,6 +75,7 @@ jobs:
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
           grep -Fq 'preview-dashboard-school' "$bundle"
+          grep -Fq 'preview-dashboard-mini' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
           grep -Fq 'preview|' "$bundle"
