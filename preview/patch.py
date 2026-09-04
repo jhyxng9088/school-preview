@@ -6,64 +6,37 @@ if len(sys.argv) != 3:
 
 root = Path(sys.argv[1])
 baseline = sys.argv[2]
+preview_dir = Path(__file__).resolve().parent
 
-# 1) Preview-only home composition: group today's school flow into one hero surface,
-# then keep reminders + lighter school info in a quieter secondary column.
-main = root / 'src/main.jsx'
-text = main.read_text()
-old = '''      <div className="home-stack">
-        <CurrentClassPreview schoolState={schoolState} now={now} />
-        <TodoHomePreview todos={todoData.todos} categories={todoData.categories} now={now} />
-        <TimetablePreview
-          schedule={timetablePreviewSchedule}
-          now={now}
-          configured={schoolState.configured}
-          title={showTomorrowTimetable ? '내일 시간표' : '오늘 시간표'}
-          futureDay={showTomorrowTimetable}
-        />
-        <SharedAcademicPreview now={now} schoolData={schoolData} academicData={academicData} />
-        <Stage3MealPreview now={now} schoolData={schoolData} />
-      </div>'''
-new = '''      <div className="preview-dashboard">
-        <section className="preview-dashboard-school" aria-label="오늘 수업">
-          <CurrentClassPreview schoolState={schoolState} now={now} />
-          <TimetablePreview
-            schedule={timetablePreviewSchedule}
-            now={now}
-            configured={schoolState.configured}
-            title={showTomorrowTimetable ? '내일 시간표' : '오늘 시간표'}
-            futureDay={showTomorrowTimetable}
-          />
-        </section>
-        <section className="preview-dashboard-rest" aria-label="오늘 할 일과 학교 정보">
-          <TodoHomePreview todos={todoData.todos} categories={todoData.categories} now={now} />
-          <div className="preview-dashboard-mini">
-            <SharedAcademicPreview now={now} schoolData={schoolData} academicData={academicData} />
-            <Stage3MealPreview now={now} schoolData={schoolData} />
-          </div>
-        </section>
-      </div>'''
-if text.count(old) != 1:
-    raise SystemExit('Home composition marker changed')
-main.write_text(text.replace(old, new, 1))
+# The production Vite config already owns a long chain of migration-safe source transforms.
+# Do not rewrite Home before that chain runs: doing so breaks its strict source markers.
+# Instead, copy one preview-only final transform and append it to the end of the existing
+# source-owner chain. This lets the radical composition operate on the canonical V2 output.
+radical_patch = root / 'src/radical-preview-patch.js'
+radical_patch.write_text((preview_dir / 'radical-source-patch.js').read_text())
 
-# 2) Reduce home-only preview density. Full reminder / academic pages remain unchanged.
-todo = root / 'src/todo.jsx'
-text = todo.read_text()
-marker = '  const visible = upcoming.slice(0, 3)'
-if text.count(marker) != 1:
-    raise SystemExit('Todo home preview marker changed')
-todo.write_text(text.replace(marker, '  const visible = upcoming.slice(0, 2)', 1))
+vite = root / 'vite.config.js'
+text = vite.read_text()
+import_marker = "import { patchSharedIconOwnerSource } from './src/shared-icon-owner-patch.js'\n"
+radical_import = "import { patchRadicalPreviewSource } from './src/radical-preview-patch.js'\n"
+if text.count(import_marker) != 1:
+    raise SystemExit('Vite final owner import marker changed')
+text = text.replace(import_marker, import_marker + radical_import, 1)
 
-academic = root / 'src/academic-shared.jsx'
-text = academic.read_text()
-marker = '  const others = upcoming.filter((group) => group !== exam).slice(0, exam ? 2 : 3)'
-if text.count(marker) != 1:
-    raise SystemExit('Academic home preview marker changed')
-academic.write_text(text.replace(marker, '  const others = upcoming.filter((group) => group !== exam).slice(0, exam ? 1 : 2)', 1))
+owner_marker = "  next = patchSharedIconOwnerSource(next, cleanId)\n  return next"
+owner_replacement = "  next = patchSharedIconOwnerSource(next, cleanId)\n  next = patchRadicalPreviewSource(next, cleanId)\n  return next"
+if text.count(owner_marker) != 1:
+    raise SystemExit('Vite final owner chain marker changed')
+text = text.replace(owner_marker, owner_replacement, 1)
 
-# 3) Preview runtime isolation. Never let preview identities, local keys or SW cleanup
-# collide with production.
+base_marker = "base: '/school/',"
+if text.count(base_marker) != 1:
+    raise SystemExit('Vite base marker changed')
+text = text.replace(base_marker, "base: '/school-preview/',", 1)
+vite.write_text(text)
+
+# Preview runtime isolation. Never let preview identities, local keys or service-worker
+# cleanup collide with production.
 for folder in (root / 'src', root / 'public'):
     for path in folder.rglob('*'):
         if path.is_file() and path.suffix in {'.js', '.jsx', '.mjs'}:
@@ -98,14 +71,7 @@ if text.count(app_shell) != 1:
 text = text.replace(app_shell, "const APP_SHELL = ['./preview-dark-ui.css', ", 1)
 sw.write_text(text)
 
-# 4) GitHub Pages path + preview marker/style injection.
-vite = root / 'vite.config.js'
-text = vite.read_text()
-base_marker = "base: '/school/',"
-if text.count(base_marker) != 1:
-    raise SystemExit('Vite base marker changed')
-vite.write_text(text.replace(base_marker, "base: '/school-preview/',", 1))
-
+# GitHub Pages path + immutable preview markers.
 index = root / 'index.html'
 text = index.read_text()
 if text.count('</head>') != 1:
