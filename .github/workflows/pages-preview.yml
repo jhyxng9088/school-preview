@@ -1,0 +1,215 @@
+name: Deploy S-Hub Preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: school-preview-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout current school main
+        run: |
+          set -euo pipefail
+          git clone --depth=2 --branch main https://github.com/jhyxng9088/school.git production-source
+          echo "MAIN_BASELINE_SHA=$(git -C production-source rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: production-source/package-lock.json
+
+      - name: Install and test untouched current main source
+        working-directory: production-source
+        run: |
+          npm ci
+          npm test
+
+      - name: Generate preview-only dark UI layer
+        working-directory: production-source
+        run: |
+          cat > public/preview-dark-ui.css <<'CSS'
+          /* S-Hub dark UI preview experiment. Generated only in preview CI. */
+          @media (prefers-color-scheme: dark) {
+            .week-corner { color:#98989d; }
+            .week-day-head,.week-period-label { color:#b5b5ba; }
+            .week-day-head span,.week-period-label span,.week-legend { color:#98989d; }
+            .week-cell .subject { color:#f2f2f7; font-weight:670; }
+            .week-cell.empty .subject { color:#8e8e93; }
+            .week-cell-attribution { color:#a8a8ad; opacity:.9; }
+            .period-item.is-past { opacity:.68; }
+            .timetable-action,.editor-button,.change-submit-row button,.remove-change { border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.055); color:#b5b5ba; }
+            .timetable-action.primary { background:rgba(255,255,255,.1); color:#f2f2f7; }
+            .preview-home-signal { padding:16px 16px 15px; }
+            .preview-home-signal-head { margin-bottom:9px; }
+            .preview-home-signal-head span { color:#aaaab0; }
+            .preview-home-signal p { margin-top:6px; color:#98989e; }
+            .preview-board-card { gap:11px; padding:18px 18px 17px; }
+            .preview-board-card-body { color:#b3b3b8; }
+            .preview-board-card-meta,.preview-board-time,.preview-board-toolbar { color:#98989e; }
+            .preview-board-refresh { border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.055); color:#b8b8bd; }
+            .preview-board-refresh:active { background:rgba(255,255,255,.1); }
+            .preview-board-badge { border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.06); color:#aaaab0; }
+            .preview-board-badge.is-question { border-color:rgba(124,131,255,.2); background:rgba(124,131,255,.13); color:#d7d9ff; }
+            .todo-item.is-completed .todo-check { opacity:.72; }
+            .todo-item.is-completed .todo-item-main { opacity:1; }
+            .todo-item.is-completed .todo-item-main strong,.todo-item.is-completed .todo-item-main .todo-kind,.todo-item.is-completed .todo-item-main small { color:#8e8e93; }
+            .academic-focus-card>span,.academic-list-head span,.academic-list-date span { color:#98989e; }
+            .academic-list-item { min-height:72px; padding:12px 15px; }
+            .academic-list-copy h3 { font-weight:700; }
+            .academic-list-copy p { margin-top:5px; color:#a8a8ad; font-size:11px; line-height:1.42; }
+            .activity-attribution { color:#9c9ca2; opacity:.9; }
+            .academic-item-actions button,.academic-edit-button,.academic-delete-button { border-color:rgba(255,255,255,.1); background:rgba(255,255,255,.055); }
+            .preview-study-card-heading p,.preview-study-live-row,.preview-study-today-summary span,.preview-study-date { color:#aaaab0; }
+            .s-hub-ai-page-title p:last-child,.s-hub-ai-page-capability-copy span,.s-hub-ai-item-summary>p,.s-hub-ai-item-summary-section>p { color:#aaaab0; }
+            .s-hub-ai-page-capability-icon { background:rgba(255,255,255,.065); color:#b5b5ba; }
+            .s-hub-ai-page>.s-hub-ai-content { border-color:rgba(255,255,255,.1); }
+            .stage3-week-nav>button,.stage3-day-button:not(.is-selected) { border-color:rgba(255,255,255,.1); }
+            .stage3-week-nav>button { background:rgba(255,255,255,.05); color:#b0b0b5; }
+          }
+          @media (prefers-color-scheme: dark) and (max-width:360px) {
+            .preview-home-signal { padding:14px; }
+            .preview-board-card { padding:16px; }
+            .academic-list-item { padding-inline:12px; }
+          }
+          CSS
+
+      - name: Isolate preview runtime
+        working-directory: production-source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for root in (Path('src'), Path('public')):
+              for path in root.rglob('*'):
+                  if path.is_file() and path.suffix in {'.js', '.jsx', '.mjs'}:
+                      text = path.read_text()
+                      text = text.replace("'school.", "'school.preview.").replace('"school.', '"school.preview.')
+                      text = text.replace("'school-sync'", "'school-sync-preview'").replace('"school-sync"', '"school-sync-preview"')
+                      path.write_text(text)
+
+          sync = Path('src/school-sync.js')
+          text = sync.read_text()
+          identity = "return `${normalized.classNumber}|${normalized.studentNumber}|${compactName}`"
+          preview_identity = "return `preview|${normalized.classNumber}|${normalized.studentNumber}|${compactName}`"
+          class_key = "return normalized ? `class-${normalized.classNumber}` : ''"
+          preview_class_key = "return normalized ? `preview-class-${normalized.classNumber}` : ''"
+          if text.count(identity) != 1 or text.count(class_key) != 1:
+              raise SystemExit('preview Firebase isolation markers changed')
+          sync.write_text(text.replace(identity, preview_identity, 1).replace(class_key, preview_class_key, 1))
+
+          sw = Path('public/sw.js')
+          text = sw.read_text()
+          cache_line = next((line for line in text.splitlines() if line.startswith("const CACHE_NAME = 'school-shell-")), None)
+          tone_line = "const NOTIFICATION_PROFILE_CACHE = 'school-notification-profile-v1'"
+          cleanup = ".filter((key) => ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))"
+          if not cache_line or tone_line not in text or cleanup not in text:
+              raise SystemExit('preview service worker markers changed')
+          text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-dark-ui-v9'", 1)
+          text = text.replace(tone_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-dark-ui-v9'", 1)
+          text = text.replace(cleanup, ".filter((key) => key.startsWith('school-preview-') && ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))", 1)
+          sw.write_text(text)
+          PY
+
+      - name: Patch GitHub Pages base and preview cascade
+        working-directory: production-source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          vite = Path('vite.config.js')
+          text = vite.read_text()
+          marker = "base: '/school/',"
+          if text.count(marker) != 1:
+              raise SystemExit('Vite base marker changed')
+          vite.write_text(text.replace(marker, "base: '/school-preview/',", 1))
+
+          index = Path('index.html')
+          text = index.read_text()
+          if text.count('</head>') != 1:
+              raise SystemExit('index head marker changed')
+          inject = (
+              f'<meta name="s-hub-preview-baseline" content="{os.environ["MAIN_BASELINE_SHA"]}" />'
+              '<link rel="stylesheet" href="./preview-dark-ui.css?v=9" />'
+          )
+          index.write_text(text.replace('</head>', inject + '</head>', 1))
+          PY
+
+      - name: Build preview
+        working-directory: production-source
+        run: npm run build
+
+      - name: Verify isolated preview artifact
+        working-directory: production-source
+        run: |
+          set -euo pipefail
+          grep -Fq 's-hub-preview-baseline' dist/index.html
+          grep -Fq 'preview-dark-ui.css?v=9' dist/index.html
+          grep -Fq 'S-Hub dark UI preview experiment' dist/preview-dark-ui.css
+          grep -Fq 'school-preview-shell-dark-ui-v9' dist/sw.js
+          grep -Fq "key.startsWith('school-preview-')" dist/sw.js
+          bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
+          grep -Fq 'school-sync-preview' "$bundle"
+          grep -Fq 'preview-class-' "$bundle"
+          grep -Fq 'preview|' "$bundle"
+          grep -Fq 'school.preview.studentProfile.v1' "$bundle"
+
+      - name: Verify school main did not advance during build
+        working-directory: production-source
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "${MAIN_BASELINE_SHA}"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: production-source/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Smoke test deployed preview
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 45); do
+            h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
+            c="$(curl -fsSL "${PAGE_URL}preview-dark-ui.css?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
+            s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
+            if printf '%s' "$h" | grep -Fq 's-hub-preview-baseline' \
+              && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=9' \
+              && printf '%s' "$c" | grep -Fq 'S-Hub dark UI preview experiment' \
+              && printf '%s' "$s" | grep -Fq 'school-preview-shell-dark-ui-v9'; then
+              echo "GitHub Pages preview smoke test passed: ${PAGE_URL}"
+              exit 0
+            fi
+            sleep 4
+          done
+          exit 1
