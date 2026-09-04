@@ -8,23 +8,22 @@ root = Path(sys.argv[1])
 baseline = sys.argv[2]
 preview_dir = Path(__file__).resolve().parent
 
-# The production Vite config already owns a long chain of migration-safe source transforms.
-# Do not rewrite Home before that chain runs: doing so breaks its strict source markers.
-# Instead, copy one preview-only final transform and append it to the end of the existing
-# source-owner chain. This lets the radical composition operate on the canonical V2 output.
-radical_patch = root / 'src/radical-preview-patch.js'
-radical_patch.write_text((preview_dir / 'radical-source-patch.js').read_text())
+# Production Vite owns the canonical V2 source-transform chain. Keep it intact and append
+# one preview-only final owner so the quiet-spatial composition runs after every production
+# migration/recovery transform has settled.
+quiet_patch = root / 'src/quiet-spatial-preview-patch.js'
+quiet_patch.write_text((preview_dir / 'quiet-source-patch.js').read_text())
 
 vite = root / 'vite.config.js'
 text = vite.read_text()
 import_marker = "import { patchSharedIconOwnerSource } from './src/shared-icon-owner-patch.js'\n"
-radical_import = "import { patchRadicalPreviewSource } from './src/radical-preview-patch.js'\n"
+quiet_import = "import { patchQuietSpatialPreviewSource } from './src/quiet-spatial-preview-patch.js'\n"
 if text.count(import_marker) != 1:
     raise SystemExit('Vite final owner import marker changed')
-text = text.replace(import_marker, import_marker + radical_import, 1)
+text = text.replace(import_marker, import_marker + quiet_import, 1)
 
 owner_marker = "  next = patchSharedIconOwnerSource(next, cleanId)\n  return next"
-owner_replacement = "  next = patchSharedIconOwnerSource(next, cleanId)\n  next = patchRadicalPreviewSource(next, cleanId)\n  return next"
+owner_replacement = "  next = patchSharedIconOwnerSource(next, cleanId)\n  next = patchQuietSpatialPreviewSource(next, cleanId)\n  return next"
 if text.count(owner_marker) != 1:
     raise SystemExit('Vite final owner chain marker changed')
 text = text.replace(owner_marker, owner_replacement, 1)
@@ -62,8 +61,8 @@ tone_line = "const NOTIFICATION_PROFILE_CACHE = 'school-notification-profile-v1'
 cleanup = ".filter((key) => ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))"
 if not cache_line or tone_line not in text or cleanup not in text:
     raise SystemExit('Service worker markers changed')
-text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-radical-v2'", 1)
-text = text.replace(tone_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-radical-v2'", 1)
+text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-quiet-spatial-v1'", 1)
+text = text.replace(tone_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-quiet-spatial-v1'", 1)
 text = text.replace(cleanup, ".filter((key) => key.startsWith('school-preview-') && ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))", 1)
 app_shell = "const APP_SHELL = ["
 if text.count(app_shell) != 1:
@@ -78,7 +77,7 @@ if text.count('</head>') != 1:
     raise SystemExit('index head marker changed')
 inject = (
     f'<meta name="s-hub-preview-baseline" content="{baseline}" />'
-    '<meta name="s-hub-preview-layer" content="radical-dashboard-v2" />'
-    '<link rel="stylesheet" href="./preview-dark-ui.css?v=12" />'
+    '<meta name="s-hub-preview-layer" content="quiet-spatial-v1" />'
+    '<link rel="stylesheet" href="./preview-dark-ui.css?v=13" />'
 )
 index.write_text(text.replace('</head>', inject + '</head>', 1))

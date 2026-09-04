@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PREVIEW_STYLE_ID: radical-dashboard-v2
+  PREVIEW_STYLE_ID: quiet-spatial-v1
 
 jobs:
   build:
@@ -46,36 +46,38 @@ jobs:
           npm ci
           npm test
 
-      - name: Apply preview-only radical composition
+      - name: Apply preview-only quiet spatial composition
         run: |
           set -euo pipefail
-          cp preview-control/preview/radical.css production-source/public/preview-dark-ui.css
+          cp preview-control/preview/quiet-spatial.css production-source/public/preview-dark-ui.css
           python3 preview-control/preview/patch.py production-source "$MAIN_BASELINE_SHA"
-          grep -Fq 'S-Hub radical dashboard preview v2' production-source/public/preview-dark-ui.css
-          grep -Fq 'patchRadicalPreviewSource' production-source/src/radical-preview-patch.js
-          grep -Fq "import { patchRadicalPreviewSource } from './src/radical-preview-patch.js'" production-source/vite.config.js
-          grep -Fq 'next = patchRadicalPreviewSource(next, cleanId)' production-source/vite.config.js
+          grep -Fq 'S-Hub quiet spatial preview v1' production-source/public/preview-dark-ui.css
+          grep -Fq 'patchQuietSpatialPreviewSource' production-source/src/quiet-spatial-preview-patch.js
+          grep -Fq "import { patchQuietSpatialPreviewSource } from './src/quiet-spatial-preview-patch.js'" production-source/vite.config.js
+          grep -Fq 'next = patchQuietSpatialPreviewSource(next, cleanId)' production-source/vite.config.js
 
       - name: Build preview
         working-directory: production-source
         run: npm run build
 
-      - name: Verify isolated radical artifact
+      - name: Verify isolated quiet spatial artifact
         working-directory: production-source
         run: |
           set -euo pipefail
           grep -Fq 's-hub-preview-baseline' dist/index.html
-          grep -Fq 'radical-dashboard-v2' dist/index.html
-          grep -Fq 'preview-dark-ui.css?v=12' dist/index.html
-          grep -Fq 'S-Hub radical dashboard preview v2' dist/preview-dark-ui.css
-          grep -Fq 'preview-dashboard-school' dist/preview-dark-ui.css
-          grep -Fq 'school-preview-shell-radical-v2' dist/sw.js
+          grep -Fq 'quiet-spatial-v1' dist/index.html
+          grep -Fq 'preview-dark-ui.css?v=13' dist/index.html
+          grep -Fq 'S-Hub quiet spatial preview v1' dist/preview-dark-ui.css
+          grep -Fq '.preview-spatial-focus' dist/preview-dark-ui.css
+          grep -Fq '.preview-spatial-brief' dist/preview-dark-ui.css
+          grep -Fq 'school-preview-shell-quiet-spatial-v1' dist/sw.js
           grep -Fq "key.startsWith('school-preview-')" dist/sw.js
           grep -Fq "'./preview-dark-ui.css'" dist/sw.js
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
-          grep -Fq 'preview-dashboard-school' "$bundle"
-          grep -Fq 'preview-dashboard-mini' "$bundle"
+          grep -Fq 'preview-spatial-home' "$bundle"
+          grep -Fq 'preview-spatial-focus' "$bundle"
+          grep -Fq 'preview-spatial-brief' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
           grep -Fq 'preview|' "$bundle"
@@ -107,7 +109,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Smoke test deployed radical preview
+      - name: Smoke test deployed quiet spatial preview
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
@@ -116,12 +118,12 @@ jobs:
             h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             c="$(curl -fsSL "${PAGE_URL}preview-dark-ui.css?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if printf '%s' "$h" | grep -Fq 'radical-dashboard-v2' \
-              && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=12' \
-              && printf '%s' "$c" | grep -Fq 'S-Hub radical dashboard preview v2' \
-              && printf '%s' "$c" | grep -Fq 'preview-dashboard-school' \
-              && printf '%s' "$s" | grep -Fq 'school-preview-shell-radical-v2'; then
-              echo "Radical preview smoke test passed: ${PAGE_URL}"
+            if printf '%s' "$h" | grep -Fq 'quiet-spatial-v1' \
+              && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=13' \
+              && printf '%s' "$c" | grep -Fq 'S-Hub quiet spatial preview v1' \
+              && printf '%s' "$c" | grep -Fq '.preview-spatial-focus' \
+              && printf '%s' "$s" | grep -Fq 'school-preview-shell-quiet-spatial-v1'; then
+              echo "Quiet spatial preview smoke test passed: ${PAGE_URL}"
               exit 0
             fi
             sleep 4
