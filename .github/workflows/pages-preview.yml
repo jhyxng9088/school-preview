@@ -50,10 +50,12 @@ jobs:
         run: |
           set -euo pipefail
           grep -Fq 'S-Hub information architecture preview v1' preview-control/preview/ia-redesign.css
+          grep -Fq 'S-Hub IA layout ownership supplement v1' preview-control/preview/ia-layout-owner.css
+          grep -Fq '.ia-schedule-hub' preview-control/preview/ia-layout-owner.css
           grep -Fq 'patchIARedesignSource' preview-control/preview/ia-redesign-source-patch.js
-          ! grep -Eq 'position:[[:space:]]*(absolute|fixed)' preview-control/preview/ia-redesign.css
-          ! grep -Eq 'unified-school-sheet|unified-sheet-backdrop' preview-control/preview/ia-redesign.css
-          ! grep -Eq '@keyframes' preview-control/preview/ia-redesign.css
+          ! grep -Eq 'position:[[:space:]]*(absolute|fixed)' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
+          ! grep -Eq 'unified-school-sheet|unified-sheet-backdrop' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
+          ! grep -Eq '@keyframes' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
           ! grep -Eq 'createPortal|UnifiedBottomSheet' preview-control/preview/ia-redesign-source-patch.js
 
       - name: Apply preview-only IA composition
@@ -72,10 +74,13 @@ jobs:
             echo "IA check passed: ${label}"
           }
 
-          cp preview-control/preview/ia-redesign.css production-source/public/preview-dark-ui.css
+          cat preview-control/preview/ia-redesign.css \
+              preview-control/preview/ia-layout-owner.css \
+              > production-source/public/preview-dark-ui.css
           python3 preview-control/preview/figma-patch.py production-source "$MAIN_BASELINE_SHA"
 
           check_marker 'S-Hub information architecture preview v1' production-source/public/preview-dark-ui.css 'preview CSS copied'
+          check_marker 'S-Hub IA layout ownership supplement v1' production-source/public/preview-dark-ui.css 'layout owner CSS copied'
           check_marker '.ia-home-primary' production-source/public/preview-dark-ui.css 'home layout CSS present'
           check_marker '.ia-class-hub' production-source/public/preview-dark-ui.css 'class hub CSS present'
           check_marker '.ia-schedule-hub' production-source/public/preview-dark-ui.css 'schedule hub CSS present'
@@ -96,6 +101,7 @@ jobs:
           grep -Fq 'ia-redesign-v1' dist/index.html
           grep -Fq 'preview-dark-ui.css?v=16' dist/index.html
           grep -Fq 'S-Hub information architecture preview v1' dist/preview-dark-ui.css
+          grep -Fq 'S-Hub IA layout ownership supplement v1' dist/preview-dark-ui.css
           grep -Fq '.ia-home-primary' dist/preview-dark-ui.css
           grep -Fq '.ia-class-hub' dist/preview-dark-ui.css
           grep -Fq '.ia-schedule-hub' dist/preview-dark-ui.css
@@ -157,8 +163,10 @@ jobs:
             if grep -Fq 'ia-redesign-v1' <<< "$h" \
               && grep -Fq 'preview-dark-ui.css?v=16' <<< "$h" \
               && grep -Fq 'S-Hub information architecture preview v1' <<< "$c" \
+              && grep -Fq 'S-Hub IA layout ownership supplement v1' <<< "$c" \
               && grep -Fq '.ia-home-primary' <<< "$c" \
               && grep -Fq '.ia-class-hub' <<< "$c" \
+              && grep -Fq '.ia-schedule-hub' <<< "$c" \
               && grep -Fq 'school-preview-shell-ia-redesign-v1' <<< "$s"; then
               echo "IA preview smoke test passed: ${PAGE_URL}"
               exit 0

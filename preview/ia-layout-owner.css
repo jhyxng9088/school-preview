@@ -1,0 +1,7 @@
+/* S-Hub IA layout ownership supplement v1.
+   Preview only. Normal-flow owner for station roots that need an explicit layout boundary. */
+
+.ia-schedule-hub {
+  display: block;
+  min-width: 0;
+}
