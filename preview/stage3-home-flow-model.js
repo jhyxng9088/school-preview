@@ -1,7 +1,18 @@
-export const STAGE3_HOME_VERSION = 'live-home-stage3-v1'
+export const STAGE3_HOME_VERSION = 'live-home-stage3-v2'
 
 function cleanTitle(todo) {
   return String(todo?.title || todo?.text || todo?.content || todo?.name || '').trim() || '리마인더 확인'
+}
+
+function subjectOf(period) {
+  return String(period?.subject || '').trim() || '과목 미설정'
+}
+
+function periodMeta(period) {
+  if (!period) return ''
+  const number = period.number ? `${period.number}교시` : ''
+  const start = String(period.start || '').trim()
+  return [number, start ? `${start} 시작` : ''].filter(Boolean).join(' · ')
 }
 
 function activeTodos(todos) {
@@ -15,6 +26,10 @@ function dueAt(todo) {
   const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime) ? rawTime : '23:59'
   const value = Date.parse(`${date}T${time}:00+09:00`)
   return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY
+}
+
+function sortedActiveTodos(todos) {
+  return activeTodos(todos).sort((a, b) => dueAt(a) - dueAt(b))
 }
 
 function dueLabel(todo, dateKey) {
@@ -31,8 +46,81 @@ function sameTodo(left, right) {
   return cleanTitle(left) === cleanTitle(right)
 }
 
+function currentContext(state) {
+  const primary = String(state?.primary || 'normal')
+  const school = state?.context?.school || {}
+  const study = state?.context?.study || {}
+  const reminders = state?.context?.reminders || {}
+
+  if (primary === 'class-active' && school.current) {
+    return { label: '지금', value: subjectOf(school.current), meta: `${school.current.number || ''}교시 · 수업 중`.replace(/^교시 · /, '') }
+  }
+  if (primary === 'break-time') {
+    return { label: '지금', value: '쉬는 시간', meta: school.next ? `${subjectOf(school.next)} 준비 중` : '오늘 수업이 끝났어요.' }
+  }
+  if (primary === 'lunch-time') {
+    return { label: '지금', value: '점심시간', meta: school.next ? `다음 ${subjectOf(school.next)}` : '오후 일정을 확인해 주세요.' }
+  }
+  if (primary === 'before-school') {
+    return { label: '지금', value: '등교 전', meta: school.next ? `${subjectOf(school.next)} · ${periodMeta(school.next)}` : '첫 수업을 준비해 주세요.' }
+  }
+  if (primary === 'after-school') {
+    return { label: '지금', value: '수업 종료', meta: school.last ? `${subjectOf(school.last)}까지 완료` : '정규 수업이 끝났어요.' }
+  }
+  if (primary === 'study-active') {
+    return { label: '지금', value: String(study.subject || '').trim() || 'Study 진행 중', meta: study.paused ? '일시정지 상태예요.' : '집중 시간이 기록되고 있어요.' }
+  }
+  if (primary === 'urgent-reminder' && reminders.nearestUrgent) {
+    return { label: '지금', value: cleanTitle(reminders.nearestUrgent), meta: '마감이 가까운 일정이에요.' }
+  }
+  if (school.kind === 'holiday') {
+    return { label: '오늘', value: String(school.holiday?.name || school.holiday?.title || '').trim() || '휴업일', meta: '정규 수업이 없어요.' }
+  }
+  if (school.kind === 'weekend') {
+    return { label: '오늘', value: '주말', meta: '정규 수업이 없어요.' }
+  }
+  if (school.kind === 'no-timetable') {
+    return { label: '지금', value: '시간표 설정 전', meta: '시간표를 설정하면 흐름이 표시돼요.' }
+  }
+  return { label: '지금', value: '학교생활 확인 중', meta: '현재 상태를 정리하고 있어요.' }
+}
+
+function nextContext(state) {
+  const school = state?.context?.school || {}
+  if (school.next) {
+    return { label: '다음', value: subjectOf(school.next), meta: periodMeta(school.next) || '다음 수업' }
+  }
+  if (school.kind === 'class' && school.current) {
+    return { label: '다음', value: '정규 수업 종료', meta: '현재 수업이 마지막 수업이에요.' }
+  }
+  if (school.kind === 'done') {
+    return { label: '다음', value: '개인 일정', meta: '리마인더와 Study를 확인해 주세요.' }
+  }
+  if (school.kind === 'holiday' || school.kind === 'weekend') {
+    return { label: '다음', value: '남은 하루', meta: '필요한 일정만 가볍게 확인해 주세요.' }
+  }
+  return { label: '다음', value: '일정 확인', meta: '시간표에 맞춰 자동으로 바뀌어요.' }
+}
+
+export function buildStage3ContextModel({ state = {}, todos = [] } = {}) {
+  const list = sortedActiveTodos(todos)
+  const nearest = list[0] || null
+  return {
+    version: STAGE3_HOME_VERSION,
+    segments: [
+      currentContext(state),
+      nextContext(state),
+      {
+        label: '할 일',
+        value: list.length ? `${list.length}개 남음` : '여유 있음',
+        meta: nearest ? cleanTitle(nearest) : '급한 리마인더가 없어요.',
+      },
+    ],
+  }
+}
+
 export function buildStage3ActionModel({ state = {}, todos = [] } = {}) {
-  const list = activeTodos(todos).sort((a, b) => dueAt(a) - dueAt(b))
+  const list = sortedActiveTodos(todos)
   const reminders = state?.context?.reminders || {}
   const dateKey = String(state?.context?.dateKey || '')
   const urgent = reminders.nearestUrgent || null
