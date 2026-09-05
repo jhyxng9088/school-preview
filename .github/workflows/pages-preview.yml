@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PREVIEW_STYLE_ID: figma-quiet-v1
+  PREVIEW_STYLE_ID: tactile-showcase-v1
 
 jobs:
   build:
@@ -46,15 +46,17 @@ jobs:
           npm ci
           npm test
 
-      - name: Apply preview-only Figma quiet composition
+      - name: Apply preview-only tactile showcase composition
         run: |
           set -euo pipefail
           cat preview-control/preview/quiet-spatial.css \
               preview-control/preview/figma-quiet-overrides.css \
+              preview-control/preview/showcase-overrides.css \
               > production-source/public/preview-dark-ui.css
           python3 preview-control/preview/figma-patch.py production-source "$MAIN_BASELINE_SHA"
-          grep -Fq 'S-Hub quiet spatial preview v1' production-source/public/preview-dark-ui.css
-          grep -Fq 'S-Hub Figma quiet home v1' production-source/public/preview-dark-ui.css
+          grep -Fq 'S-Hub tactile layered showcase v1' production-source/public/preview-dark-ui.css
+          grep -Fq '.preview-showcase-hero' production-source/public/preview-dark-ui.css
+          grep -Fq '.preview-study-control-card:has(.preview-study-action-dock.is-active)' production-source/public/preview-dark-ui.css
           grep -Fq 'patchFigmaQuietPreviewSource' production-source/src/figma-quiet-preview-patch.js
           grep -Fq "import { patchFigmaQuietPreviewSource } from './src/figma-quiet-preview-patch.js'" production-source/vite.config.js
           grep -Fq 'next = patchFigmaQuietPreviewSource(next, cleanId)' production-source/vite.config.js
@@ -63,27 +65,27 @@ jobs:
         working-directory: production-source
         run: npm run build
 
-      - name: Verify isolated Figma quiet artifact
+      - name: Verify isolated tactile showcase artifact
         working-directory: production-source
         run: |
           set -euo pipefail
           grep -Fq 's-hub-preview-baseline' dist/index.html
-          grep -Fq 'figma-quiet-v1' dist/index.html
-          grep -Fq 'preview-dark-ui.css?v=14' dist/index.html
-          grep -Fq 'S-Hub Figma quiet home v1' dist/preview-dark-ui.css
-          grep -Fq '.preview-figma-focus' dist/preview-dark-ui.css
-          grep -Fq '.preview-figma-tasks' dist/preview-dark-ui.css
-          grep -Fq '.preview-figma-glance' dist/preview-dark-ui.css
-          grep -Fq 'school-preview-shell-figma-quiet-v1' dist/sw.js
+          grep -Fq 'tactile-showcase-v1' dist/index.html
+          grep -Fq 'preview-dark-ui.css?v=15' dist/index.html
+          grep -Fq 'S-Hub tactile layered showcase v1' dist/preview-dark-ui.css
+          grep -Fq '.preview-showcase-hero' dist/preview-dark-ui.css
+          grep -Fq '.preview-board-card' dist/preview-dark-ui.css
+          grep -Fq '.s-hub-ai-page-mark' dist/preview-dark-ui.css
+          grep -Fq 'school-preview-shell-tactile-showcase-v1' dist/sw.js
           grep -Fq "key.startsWith('school-preview-')" dist/sw.js
           grep -Fq "'./preview-dark-ui.css'" dist/sw.js
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
-          grep -Fq 'preview-figma-home' "$bundle"
-          grep -Fq 'preview-figma-focus' "$bundle"
-          grep -Fq 'preview-figma-tasks' "$bundle"
-          grep -Fq 'preview-figma-glance' "$bundle"
-          grep -Fq '좋은 아침이에요' "$bundle"
+          grep -Fq 'preview-showcase-home' "$bundle"
+          grep -Fq 'preview-showcase-hero' "$bundle"
+          grep -Fq 'preview-showcase-quote' "$bundle"
+          grep -Fq '좋은 하루예요' "$bundle"
+          grep -Fq '오늘도 수고했어요.' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
           grep -Fq 'preview|' "$bundle"
@@ -115,7 +117,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Smoke test deployed Figma quiet preview
+      - name: Smoke test deployed tactile showcase preview
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
@@ -124,12 +126,12 @@ jobs:
             h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             c="$(curl -fsSL "${PAGE_URL}preview-dark-ui.css?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if printf '%s' "$h" | grep -Fq 'figma-quiet-v1' \
-              && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=14' \
-              && printf '%s' "$c" | grep -Fq 'S-Hub Figma quiet home v1' \
-              && printf '%s' "$c" | grep -Fq '.preview-figma-focus' \
-              && printf '%s' "$s" | grep -Fq 'school-preview-shell-figma-quiet-v1'; then
-              echo "Figma quiet preview smoke test passed: ${PAGE_URL}"
+            if printf '%s' "$h" | grep -Fq 'tactile-showcase-v1' \
+              && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=15' \
+              && printf '%s' "$c" | grep -Fq 'S-Hub tactile layered showcase v1' \
+              && printf '%s' "$c" | grep -Fq '.preview-showcase-hero' \
+              && printf '%s' "$s" | grep -Fq 'school-preview-shell-tactile-showcase-v1'; then
+              echo "Tactile showcase preview smoke test passed: ${PAGE_URL}"
               exit 0
             fi
             sleep 4
