@@ -42,7 +42,7 @@ test('Stage 4 makes Class and Schedule use the same navigation surface contract'
 })
 
 test('Stage 4 identifies Study as an action station while keeping live and ranking areas quieter', () => {
-  const source = `function Control({ paused }) {\n  return <section className={\`preview-study-card preview-study-control-card\${paused ? ' is-paused' : ''}\`} />\n}\nfunction Live() { return <section className="preview-study-section" /> }\nfunction Rank() { return <section className="preview-study-section preview-study-ranking-section" /> }\nexport function Page() {\n  return (\n    <section className="preview-study-page">\n      <header className="page-header preview-study-header"><h1>스터디</h1></header>\n    </section>\n  )\n}`
+  const source = `function Control({ paused }) {\n  return <section className={\`preview-study-card preview-study-control-card\${paused ? ' is-paused' : ''}\`}>Study</section>\n}\nfunction Live() { return <section className="preview-study-section">Live</section> }\nfunction Rank() { return <section className="preview-study-section preview-study-ranking-section">Rank</section> }\nexport function Page() {\n  return (\n    <section className="preview-study-page">\n      <header className="page-header preview-study-header"><h1>스터디</h1></header>\n    </section>\n  )\n}`
   const next = patchStage4RoleSurfaceSource(source, '/src/preview-study.jsx')
   assert.match(next, /data-role-station="study"/)
   assert.match(next, /preview-study-header role-surface-heading/)
