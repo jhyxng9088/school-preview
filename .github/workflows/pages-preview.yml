@@ -82,7 +82,13 @@ jobs:
           grep -Fq 'experience-state-stage1-v1' production-source/index.html
           ! grep -Fq 'preview-dark-ui.css' production-source/index.html
 
-      - name: Test Stage 1 model and regression suite
+      - name: Test Stage 1 Experience State model
+        working-directory: production-source
+        run: |
+          set -euo pipefail
+          node --test tests/experience-state-stage1.test.js
+
+      - name: Test post-overlay production regression suite
         working-directory: production-source
         run: |
           set -euo pipefail
