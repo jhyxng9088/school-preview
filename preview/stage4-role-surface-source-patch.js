@@ -54,7 +54,7 @@ function patchMainSource(source) {
     )
   }
 
-  if (!next.includes('data-role-surface="navigation" data-role-station="class"')) {
+  if (!next.includes('data-role-surface="navigation" data-role-surface-version="role-surface-stage4-v1" data-role-station="class"')) {
     next = replaceExact(
       next,
       'className="class-top-segment" role="group" aria-label="우리 반 메뉴"',
@@ -72,7 +72,7 @@ function patchMainSource(source) {
     )
   }
 
-  if (!next.includes('data-role-surface="navigation" data-role-station="schedule"')) {
+  if (!next.includes('data-role-surface="navigation" data-role-surface-version="role-surface-stage4-v1" data-role-station="schedule"')) {
     next = replaceExact(
       next,
       'className="class-top-segment schedule-top-segment" role="group" aria-label="일정 세부 메뉴"',
@@ -114,7 +114,7 @@ function patchStudySource(source) {
     )
   }
 
-  if (!next.includes('data-role-surface="collection" data-role-station="study"')) {
+  if (!next.includes('data-role-surface="collection"')) {
     next = replaceExact(
       next,
       '<section className="preview-study-section">',
@@ -134,24 +134,14 @@ function patchStudySource(source) {
 
 function patchAISource(source) {
   let next = String(source || '')
+  if (next.includes('data-role-surface="workspace"')) return next
 
-  if (!next.includes('data-role-station="ai"')) {
-    next = replaceExact(
-      next,
-      '<section className="s-hub-ai-page" aria-label="S-Hub AI">',
-      '<section className="s-hub-ai-page role-station-page" data-role-station="ai" data-role-surface-version="role-surface-stage4-v1" aria-label="S-Hub AI">',
-      'AI station owner',
-    )
-  }
-
-  if (!next.includes('data-role-surface="workspace"')) {
-    next = replaceExact(
-      next,
-      '<header className="s-hub-ai-page-hero">',
-      '<header className="s-hub-ai-page-hero role-surface-heading" data-role-surface="workspace" data-role-surface-version="role-surface-stage4-v1" data-role-station="ai">',
-      'AI workspace surface',
-    )
-  }
+  next = replaceExact(
+    next,
+    "<header className={'s-hub-ai-page-hero ' + (working ? 'is-working' : 'is-idle')}>",
+    "<header className={'s-hub-ai-page-hero role-surface-heading ' + (working ? 'is-working' : 'is-idle')} data-role-surface=\"workspace\" data-role-surface-version=\"role-surface-stage4-v1\" data-role-station=\"ai\">",
+    'AI transformed workspace owner',
+  )
 
   return next
 }
