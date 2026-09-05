@@ -59,16 +59,30 @@ jobs:
       - name: Apply preview-only IA composition
         run: |
           set -euo pipefail
+          check_marker() {
+            local marker="$1"
+            local file="$2"
+            local label="$3"
+            if ! grep -Fq "$marker" "$file"; then
+              echo "::error::IA preview check failed: ${label}"
+              echo "Expected marker: ${marker}"
+              echo "File: ${file}"
+              exit 1
+            fi
+            echo "IA check passed: ${label}"
+          }
+
           cp preview-control/preview/ia-redesign.css production-source/public/preview-dark-ui.css
           python3 preview-control/preview/figma-patch.py production-source "$MAIN_BASELINE_SHA"
-          grep -Fq 'S-Hub information architecture preview v1' production-source/public/preview-dark-ui.css
-          grep -Fq '.ia-home-primary' production-source/public/preview-dark-ui.css
-          grep -Fq '.ia-class-hub' production-source/public/preview-dark-ui.css
-          grep -Fq '.ia-schedule-hub' production-source/public/preview-dark-ui.css
-          grep -Fq '.ia-ai-workspace' production-source/public/preview-dark-ui.css
-          grep -Fq 'patchIARedesignSource' production-source/src/ia-preview-patch.js
-          grep -Fq "import { patchIARedesignSource } from './src/ia-preview-patch.js'" production-source/vite.config.js
-          grep -Fq 'next = patchIARedesignSource(next, cleanId)' production-source/vite.config.js
+
+          check_marker 'S-Hub information architecture preview v1' production-source/public/preview-dark-ui.css 'preview CSS copied'
+          check_marker '.ia-home-primary' production-source/public/preview-dark-ui.css 'home layout CSS present'
+          check_marker '.ia-class-hub' production-source/public/preview-dark-ui.css 'class hub CSS present'
+          check_marker '.ia-schedule-hub' production-source/public/preview-dark-ui.css 'schedule hub CSS present'
+          check_marker '.ia-ai-workspace' production-source/public/preview-dark-ui.css 'AI workspace CSS present'
+          check_marker 'patchIARedesignSource' production-source/src/ia-preview-patch.js 'IA source patch copied'
+          check_marker "import { patchIARedesignSource } from './src/ia-preview-patch.js'" production-source/vite.config.js 'IA Vite import wired'
+          check_marker 'next = patchIARedesignSource(next, cleanId)' production-source/vite.config.js 'IA final transform wired'
 
       - name: Build preview
         working-directory: production-source
