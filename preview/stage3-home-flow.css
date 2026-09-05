@@ -7,19 +7,76 @@
 
 .stage3-home-zone {
   min-width: 0;
-  padding: 26px 0;
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding: 28px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
 }
 
 .stage3-home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   padding-top: 0;
-  padding-bottom: 30px;
+  padding-bottom: 32px;
   border-top: 0;
 }
 
 .stage3-home-hero .experience-surface {
-  min-height: 188px;
-  border-radius: 28px;
+  min-height: 194px;
+  border-radius: 30px;
+}
+
+.stage3-context-rail {
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: inset 0 1px color-mix(in srgb, white 6%, transparent);
+}
+
+.stage3-context-segment {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 104px;
+  padding: 15px 16px;
+}
+
+.stage3-context-segment + .stage3-context-segment {
+  border-left: 1px solid color-mix(in srgb, var(--divider) 82%, transparent);
+}
+
+.stage3-context-segment small,
+.stage3-context-segment strong,
+.stage3-context-segment span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage3-context-segment small {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  font-weight: 720;
+  letter-spacing: -.01em;
+}
+
+.stage3-context-segment strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 780;
+  letter-spacing: -.035em;
+  line-height: 1.15;
+}
+
+.stage3-context-segment span {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 560;
+  letter-spacing: -.015em;
 }
 
 .stage3-home-zone-heading {
@@ -45,10 +102,10 @@
 
 .stage3-home-zone-heading h2 {
   color: var(--text);
-  font-size: 20px;
-  font-weight: 780;
-  letter-spacing: -.045em;
-  line-height: 1.12;
+  font-size: 21px;
+  font-weight: 790;
+  letter-spacing: -.047em;
+  line-height: 1.1;
 }
 
 .stage3-home-today > .home-section,
@@ -65,18 +122,45 @@
 
 .stage3-home-today .period-strip {
   margin-top: 0 !important;
+  overflow: hidden;
+  gap: 0 !important;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 21px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+}
+
+.stage3-home-today .period-item {
+  min-height: 66px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.stage3-home-today .period-item + .period-item {
+  border-left: 1px solid color-mix(in srgb, var(--divider) 84%, transparent) !important;
+}
+
+.stage3-home-today .period-item.is-current,
+.stage3-home-today .period-item.is-next {
+  background: color-mix(in srgb, var(--surface-soft) 76%, transparent) !important;
+}
+
+.stage3-home-today .period-item.is-current strong,
+.stage3-home-today .period-item.is-next strong {
+  color: var(--text) !important;
 }
 
 .stage3-action-focus {
   width: 100%;
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 18px 17px;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  border-radius: 22px;
+  gap: 15px;
+  padding: 20px 20px 19px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 23px;
   appearance: none;
   -webkit-appearance: none;
   background: color-mix(in srgb, var(--surface) 86%, transparent);
@@ -93,8 +177,19 @@
 }
 
 .stage3-action-focus[data-stage3-action-tone='urgent'] {
-  border-color: color-mix(in srgb, #ff6b6b 32%, var(--border));
+  border-color: color-mix(in srgb, #ff6b6b 34%, var(--border));
   background: color-mix(in srgb, #ff6b6b 8%, var(--surface));
+}
+
+.stage3-action-indicator {
+  width: 8px;
+  height: 34px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-tertiary) 42%, transparent);
+}
+
+.stage3-action-focus[data-stage3-action-tone='urgent'] .stage3-action-indicator {
+  background: #ff6b6b;
 }
 
 .stage3-action-copy {
@@ -114,10 +209,10 @@
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 18px;
-  font-weight: 780;
-  letter-spacing: -.04em;
-  line-height: 1.18;
+  font-size: 19px;
+  font-weight: 790;
+  letter-spacing: -.042em;
+  line-height: 1.16;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -138,6 +233,29 @@
   transform: translateY(-1px);
 }
 
+.stage3-home-reminders .todo-home-list {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.stage3-home-reminders .todo-home-item {
+  min-height: 68px;
+  padding: 11px 4px;
+}
+
+.stage3-home-reminders .todo-home-item + .todo-home-item {
+  border-top-color: color-mix(in srgb, var(--divider) 80%, transparent);
+}
+
+.stage3-home-reminders .compact-empty {
+  min-height: 68px;
+  padding-inline: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .stage3-home-class .preview-home-signals {
   margin: 0 !important;
 }
@@ -147,11 +265,25 @@
 }
 
 .stage3-home-class .preview-home-signals-grid {
+  overflow: hidden;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
 }
 
 .stage3-home-class .preview-home-signal {
-  min-height: 112px;
+  min-height: 116px;
+  padding: 15px 15px 14px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.stage3-home-class .preview-home-signal + .preview-home-signal {
+  border-left: 1px solid color-mix(in srgb, var(--divider) 82%, transparent) !important;
 }
 
 .stage3-upcoming-grid {
@@ -167,7 +299,7 @@
 @media (min-width: 760px) {
   .stage3-live-home {
     grid-template-columns: minmax(0, 1.06fr) minmax(320px, .94fr) !important;
-    column-gap: 32px !important;
+    column-gap: 34px !important;
   }
 
   .stage3-home-hero,
@@ -175,6 +307,26 @@
   .stage3-home-focus,
   .stage3-home-upcoming {
     grid-column: 1 / -1;
+  }
+
+  .stage3-home-hero {
+    grid-template-columns: minmax(0, 1.48fr) minmax(250px, .72fr);
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .stage3-context-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stage3-context-segment {
+    min-height: 0;
+    padding: 15px 17px;
+  }
+
+  .stage3-context-segment + .stage3-context-segment {
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--divider) 82%, transparent);
   }
 
   .stage3-home-reminders {
@@ -189,36 +341,58 @@
 
   .stage3-home-reminders,
   .stage3-home-class {
-    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
   }
 
   .stage3-upcoming-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
+    gap: 30px;
   }
 }
 
 @media (max-width: 620px) {
   .stage3-home-zone {
-    padding: 22px 0;
+    padding: 23px 0;
   }
 
   .stage3-home-hero {
     padding-top: 0;
-    padding-bottom: 24px;
+    padding-bottom: 25px;
   }
 
   .stage3-home-hero .experience-surface {
-    min-height: 170px;
-    border-radius: 24px;
+    min-height: 174px;
+    border-radius: 25px;
+  }
+
+  .stage3-context-segment {
+    min-height: 94px;
+    padding: 13px 12px;
+  }
+
+  .stage3-context-segment strong {
+    font-size: 14px;
+  }
+
+  .stage3-context-segment span {
+    font-size: 10px;
+  }
+
+  .stage3-home-today .period-item {
+    min-height: 60px;
   }
 
   .stage3-home-class .preview-home-signals-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .stage3-home-class .preview-home-signal:last-child {
-    grid-column: 1 / -1;
+  .stage3-home-class .preview-home-signal + .preview-home-signal {
+    border-left: 0 !important;
+    border-top: 1px solid color-mix(in srgb, var(--divider) 82%, transparent) !important;
+  }
+
+  .stage3-home-class .preview-home-signal {
+    min-height: 88px;
   }
 }
 
