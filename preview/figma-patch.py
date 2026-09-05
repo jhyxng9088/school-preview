@@ -8,21 +8,21 @@ root = Path(sys.argv[1])
 baseline = sys.argv[2]
 preview_dir = Path(__file__).resolve().parent
 
-# Production Vite owns the canonical V2 transform chain. Append one preview-only final
-# transform so the approved showcase composition is applied after production migrations.
-figma_patch = root / 'src/figma-quiet-preview-patch.js'
-figma_patch.write_text((preview_dir / 'figma-quiet-source-patch.js').read_text())
+# Production Vite remains the canonical owner for functionality, unified sheets,
+# station springs, and shared icon motion. IA changes are appended once, last.
+ia_patch = root / 'src/ia-preview-patch.js'
+ia_patch.write_text((preview_dir / 'ia-redesign-source-patch.js').read_text())
 
 vite = root / 'vite.config.js'
 text = vite.read_text()
 import_marker = "import { patchSharedIconOwnerSource } from './src/shared-icon-owner-patch.js'\n"
-figma_import = "import { patchFigmaQuietPreviewSource } from './src/figma-quiet-preview-patch.js'\n"
+ia_import = "import { patchIARedesignSource } from './src/ia-preview-patch.js'\n"
 if text.count(import_marker) != 1:
     raise SystemExit('Vite final owner import marker changed')
-text = text.replace(import_marker, import_marker + figma_import, 1)
+text = text.replace(import_marker, import_marker + ia_import, 1)
 
 owner_marker = "  next = patchSharedIconOwnerSource(next, cleanId)\n  return next"
-owner_replacement = "  next = patchSharedIconOwnerSource(next, cleanId)\n  next = patchFigmaQuietPreviewSource(next, cleanId)\n  return next"
+owner_replacement = "  next = patchSharedIconOwnerSource(next, cleanId)\n  next = patchIARedesignSource(next, cleanId)\n  return next"
 if text.count(owner_marker) != 1:
     raise SystemExit('Vite final owner chain marker changed')
 text = text.replace(owner_marker, owner_replacement, 1)
@@ -60,8 +60,8 @@ profile_line = "const NOTIFICATION_PROFILE_CACHE = 'school-notification-profile-
 cleanup = ".filter((key) => ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))"
 if not cache_line or profile_line not in text or cleanup not in text:
     raise SystemExit('Service worker markers changed')
-text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-tactile-showcase-v1'", 1)
-text = text.replace(profile_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-tactile-showcase-v1'", 1)
+text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-ia-redesign-v1'", 1)
+text = text.replace(profile_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-ia-redesign-v1'", 1)
 text = text.replace(cleanup, ".filter((key) => key.startsWith('school-preview-') && ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))", 1)
 app_shell = "const APP_SHELL = ["
 if text.count(app_shell) != 1:
@@ -76,7 +76,7 @@ if text.count('</head>') != 1:
     raise SystemExit('index head marker changed')
 inject = (
     f'<meta name="s-hub-preview-baseline" content="{baseline}" />'
-    '<meta name="s-hub-preview-layer" content="tactile-showcase-v1" />'
-    '<link rel="stylesheet" href="./preview-dark-ui.css?v=15" />'
+    '<meta name="s-hub-preview-layer" content="ia-redesign-v1" />'
+    '<link rel="stylesheet" href="./preview-dark-ui.css?v=16" />'
 )
 index.write_text(text.replace('</head>', inject + '</head>', 1))
