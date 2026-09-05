@@ -8,7 +8,7 @@ function replaceExact(source, marker, replacement, label) {
 function patchMainSource(source) {
   let next = String(source || '')
   const importMarker = "import { ExperienceSurface } from './experience-surface.jsx'\n"
-  const stage3Import = "import { Stage3ActionFocus } from './stage3-home-flow.jsx'\n"
+  const stage3Import = "import { Stage3ActionFocus, Stage3ContextRail } from './stage3-home-flow.jsx'\n"
   if (!next.includes(stage3Import)) {
     next = replaceExact(next, importMarker, `${importMarker}${stage3Import}`, 'Stage 3 home import')
   }
@@ -28,9 +28,10 @@ function patchMainSource(source) {
         <Stage3MealPreview now={now} schoolData={schoolData} />
       </div>`
 
-  const stage3Stack = `      <div ref={homeStackRef} className={\`home-stack stage3-live-home \${mealPriority ? 'is-meal-priority' : ''}\`} data-home-lunch-ready="true" data-stage3-live-home="live-home-stage3-v1">
+  const stage3Stack = `      <div ref={homeStackRef} className={\`home-stack stage3-live-home \${mealPriority ? 'is-meal-priority' : ''}\`} data-home-lunch-ready="true" data-stage3-live-home="live-home-stage3-v2">
         <section className="stage3-home-zone stage3-home-hero" aria-label="현재 학교생활">
           <ExperienceSurface />
+          <Stage3ContextRail todos={todoData.todos} />
         </section>
 
         <section className="stage3-home-zone stage3-home-today" aria-labelledby="stage3-today-title">
