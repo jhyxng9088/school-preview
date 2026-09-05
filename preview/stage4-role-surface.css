@@ -1,0 +1,157 @@
+:root {
+  --role-surface-radius: 24px;
+  --role-surface-radius-compact: 18px;
+  --role-surface-edge: color-mix(in srgb, var(--border) 82%, transparent);
+  --role-surface-divider: color-mix(in srgb, var(--divider) 84%, transparent);
+  --role-surface-fill: color-mix(in srgb, var(--surface) 88%, transparent);
+  --role-surface-fill-soft: color-mix(in srgb, var(--surface-soft) 84%, transparent);
+  --role-surface-shadow: inset 0 1px color-mix(in srgb, white 7%, transparent), var(--shadow-soft);
+  --role-surface-heading-gap: 4px;
+}
+
+[data-role-surface-version='role-surface-stage4-v1'] {
+  min-width: 0;
+}
+
+/* Status surfaces answer “what is happening now?” and stay visually dominant. */
+[data-role-surface='status'] {
+  --experience-surface-role-radius: 30px;
+}
+
+.experience-surface[data-role-surface='status'] {
+  border-color: var(--role-surface-edge);
+  border-radius: var(--experience-surface-role-radius) !important;
+  box-shadow: var(--role-surface-shadow);
+}
+
+/* Action surfaces are one tactile family whether they live on Home or Study. */
+.stage3-action-focus[data-role-surface='action'],
+.preview-study-control-card[data-role-surface='action'] {
+  border-color: var(--role-surface-edge) !important;
+  border-radius: var(--role-surface-radius) !important;
+  background: var(--role-surface-fill) !important;
+  box-shadow: var(--role-surface-shadow) !important;
+}
+
+.stage3-action-focus[data-role-surface='action']:active,
+.preview-study-control-card[data-role-surface='action'] .preview-study-primary-button:active,
+.preview-study-control-card[data-role-surface='action'] .preview-study-stop-button:active {
+  transform: scale(.988);
+}
+
+/* Navigation surfaces share one shell instead of station-specific lookalikes. */
+.class-top-segment[data-role-surface='navigation'] {
+  --segment-padding: 5px;
+  height: 46px;
+  margin-top: 0;
+  border-radius: var(--role-surface-radius-compact);
+}
+
+.class-top-segment[data-role-surface='navigation']::before {
+  border-color: var(--role-surface-edge);
+  border-radius: var(--role-surface-radius-compact);
+  background: var(--role-surface-fill);
+  box-shadow: var(--role-surface-shadow);
+}
+
+.class-top-segment[data-role-surface='navigation'] .class-top-segment-pill {
+  border-radius: 14px;
+}
+
+.role-station-page[data-role-station='class'],
+.role-station-page[data-role-station='schedule'] {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+
+/* Study and AI retain their own jobs, but their top hierarchy follows the same type scale. */
+.role-surface-heading {
+  min-width: 0;
+  margin-bottom: 18px;
+}
+
+.role-surface-heading .eyebrow {
+  margin: 0 0 var(--role-surface-heading-gap);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 710;
+  letter-spacing: -.015em;
+}
+
+.role-surface-heading h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(27px, 5vw, 34px);
+  line-height: 1.04;
+  letter-spacing: -.05em;
+}
+
+.preview-study-header.role-surface-heading {
+  align-items: end;
+}
+
+.preview-study-header.role-surface-heading .preview-study-date {
+  padding-bottom: 4px;
+  color: var(--text-tertiary);
+}
+
+.s-hub-ai-page-hero[data-role-surface='workspace'] {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--role-surface-edge);
+  border-radius: var(--role-surface-radius);
+  background: var(--role-surface-fill);
+  box-shadow: var(--role-surface-shadow);
+}
+
+.s-hub-ai-page-hero[data-role-surface='workspace'] .s-hub-ai-page-mark {
+  border-color: var(--role-surface-divider);
+  background: var(--role-surface-fill-soft);
+  box-shadow: none;
+}
+
+.s-hub-ai-page-hero[data-role-surface='workspace'] .s-hub-ai-page-title p:last-child {
+  color: var(--text-secondary);
+}
+
+/* Collection surfaces are quieter than actions, so lists do not compete with the primary job. */
+.preview-study-section[data-role-surface='collection'] {
+  padding-top: 2px;
+}
+
+.preview-study-section[data-role-surface='collection'] .preview-study-live-list,
+.preview-study-section[data-role-surface='collection'] .preview-study-today-list {
+  border-color: var(--role-surface-edge);
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  box-shadow: inset 0 1px color-mix(in srgb, white 4%, transparent);
+}
+
+html.school-samsung .s-hub-ai-page-hero[data-role-surface='workspace'],
+html.school-samsung .class-top-segment[data-role-surface='navigation']::before,
+html.school-samsung .stage3-action-focus[data-role-surface='action'],
+html.school-samsung .preview-study-control-card[data-role-surface='action'] {
+  background: var(--surface) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (max-width: 620px) {
+  :root {
+    --role-surface-radius: 22px;
+  }
+
+  .experience-surface[data-role-surface='status'] {
+    --experience-surface-role-radius: 25px;
+  }
+
+  .s-hub-ai-page-hero[data-role-surface='workspace'] {
+    padding: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-role-surface] {
+    transition-duration: .01ms !important;
+  }
+}
