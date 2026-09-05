@@ -69,18 +69,17 @@ jobs:
             preview-control/preview/stage1-experience-state-study-bridge.js \
             preview-control/preview/stage1-experience-state-source-patch.js
 
-      - name: Apply Preview-only Stage 1 transform
+      - name: Apply Preview-only Stage 1 owner overlay
         run: |
           set -euo pipefail
-          python3 preview-control/preview/stage1-patch.py production-source "$MAIN_BASELINE_SHA"
+          python3 preview-control/preview/stage1-patch.py production-source "$MAIN_BASELINE_SHA" overlay
           grep -Fq 'experience-state-stage1-v1' production-source/src/experience-state.js
           grep -Fq 'ExperienceStateProvider' production-source/src/experience-state-react.jsx
           grep -Fq 'publishExperienceStudySignal' production-source/src/experience-state-study-bridge.js
           grep -Fq "import { patchExperienceStateSource } from './src/experience-state-source-patch.js'" production-source/vite.config.js
           grep -Fq 'next = patchExperienceStateSource(next, cleanId)' production-source/vite.config.js
-          grep -Fq "base: '/school-preview/'" production-source/vite.config.js
-          grep -Fq 'experience-state-stage1-v1' production-source/index.html
-          ! grep -Fq 'preview-dark-ui.css' production-source/index.html
+          grep -Fq "base: '/school/'" production-source/vite.config.js
+          ! grep -Fq 'experience-state-stage1-v1' production-source/index.html
 
       - name: Test Stage 1 Experience State model
         working-directory: production-source
@@ -88,11 +87,30 @@ jobs:
           set -euo pipefail
           node --test tests/experience-state-stage1.test.js
 
-      - name: Test post-overlay production regression suite
+      - name: Test Stage 1 overlay against production regression suite
         working-directory: production-source
         run: |
           set -euo pipefail
           npm test
+
+      - name: Apply Preview runtime isolation
+        run: |
+          set -euo pipefail
+          python3 preview-control/preview/stage1-patch.py production-source "$MAIN_BASELINE_SHA" isolate
+          grep -Fq "base: '/school-preview/'" production-source/vite.config.js
+          grep -Fq 'experience-state-stage1-v1' production-source/index.html
+          ! grep -Fq 'preview-dark-ui.css' production-source/index.html
+          grep -Fq 'school-sync-preview' production-source/src/school-sync.js
+          grep -Fq 'preview-class-' production-source/src/school-sync.js
+          grep -Fq 'preview|' production-source/src/school-sync.js
+          grep -Fq 'school-preview-shell-experience-stage1-v1' production-source/public/sw.js
+          grep -Fq 'school-preview-notification-profile-experience-stage1-v1' production-source/public/sw.js
+          grep -Fq "key.startsWith('school-preview-')" production-source/public/sw.js
+
+      - name: Test Preview isolation contract
+        working-directory: production-source
+        run: |
+          set -euo pipefail
           node --test push-backend-v2/test/preview-isolation.test.js
 
       - name: Build Preview
