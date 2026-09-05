@@ -1,0 +1,151 @@
+.experience-surface {
+  --experience-glow: rgba(72, 102, 255, 0.16);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 176px;
+  padding: 20px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.07), inset 0 1px rgba(255, 255, 255, 0.72);
+  transition: border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+
+.experience-surface[data-experience-tone='class'] { --experience-glow: rgba(71, 108, 255, 0.20); }
+.experience-surface[data-experience-tone='break'] { --experience-glow: rgba(63, 152, 133, 0.18); }
+.experience-surface[data-experience-tone='lunch'] { --experience-glow: rgba(215, 149, 66, 0.18); }
+.experience-surface[data-experience-tone='study'] { --experience-glow: rgba(128, 91, 219, 0.20); }
+.experience-surface[data-experience-tone='urgent'] { --experience-glow: rgba(221, 88, 88, 0.18); }
+.experience-surface[data-experience-tone='holiday'],
+.experience-surface[data-experience-tone='weekend'] { --experience-glow: rgba(73, 141, 184, 0.14); }
+
+.experience-surface-glow {
+  position: absolute;
+  z-index: -1;
+  top: -54px;
+  right: -38px;
+  width: 190px;
+  height: 190px;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--experience-glow) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.experience-surface-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.experience-surface-eyebrow {
+  margin: 0;
+  color: rgba(18, 24, 38, 0.58);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.experience-surface-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.experience-surface-badges span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(18, 24, 38, 0.07);
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.72);
+  color: rgba(18, 24, 38, 0.66);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.experience-surface-copy {
+  margin-top: 24px;
+}
+
+.experience-surface-copy h2 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(25px, 6vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.experience-surface-detail,
+.experience-surface-support {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.experience-surface-detail {
+  margin-top: 9px;
+  color: rgba(17, 24, 39, 0.64);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.experience-surface-support {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(17, 24, 39, 0.07);
+  color: rgba(17, 24, 39, 0.48);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .experience-surface {
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(24, 24, 28, 0.88);
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.26), inset 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .experience-surface-glow {
+    opacity: 0.82;
+  }
+
+  .experience-surface-eyebrow,
+  .experience-surface-detail {
+    color: rgba(245, 247, 250, 0.62);
+  }
+
+  .experience-surface-copy h2 {
+    color: #f7f8fa;
+  }
+
+  .experience-surface-badges span {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.055);
+    color: rgba(245, 247, 250, 0.68);
+  }
+
+  .experience-surface-support {
+    border-top-color: rgba(255, 255, 255, 0.07);
+    color: rgba(245, 247, 250, 0.43);
+  }
+}
+
+@media (max-width: 520px) {
+  .experience-surface {
+    min-height: 164px;
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .experience-surface-copy {
+    margin-top: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience-surface { transition: none; }
+}
