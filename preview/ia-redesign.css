@@ -1,0 +1,688 @@
+/* S-Hub information architecture preview v1.
+   Preview-only layout layer. No absolute/fixed positioning, no modal overrides,
+   and no new keyframe system: existing S-Hub station springs and UnifiedBottomSheet stay canonical. */
+
+:root {
+  --ia-bg: #f4f5f7;
+  --ia-surface: #ffffff;
+  --ia-surface-soft: #eef0f3;
+  --ia-surface-quiet: rgba(255, 255, 255, .62);
+  --ia-text: #17191d;
+  --ia-secondary: #676d78;
+  --ia-tertiary: #9197a2;
+  --ia-line: rgba(23, 25, 29, .085);
+  --ia-accent: #5577e8;
+  --ia-accent-soft: rgba(85, 119, 232, .11);
+  --ia-radius-xl: 28px;
+  --ia-radius-lg: 22px;
+  --ia-radius-md: 17px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ia-bg: #090a0d;
+    --ia-surface: #15171c;
+    --ia-surface-soft: #101217;
+    --ia-surface-quiet: rgba(21, 23, 28, .72);
+    --ia-text: #f5f6f8;
+    --ia-secondary: #a5aab4;
+    --ia-tertiary: #747b87;
+    --ia-line: rgba(255, 255, 255, .085);
+    --ia-accent: #718cf4;
+    --ia-accent-soft: rgba(113, 140, 244, .13);
+  }
+}
+
+html,
+body,
+#root,
+.app-shell {
+  background: var(--ia-bg);
+}
+
+.app-content {
+  width: min(100%, 760px);
+  padding-inline: 18px;
+}
+
+.app-content *,
+.app-content *::before,
+.app-content *::after {
+  box-sizing: border-box;
+}
+
+.app-content section,
+.app-content article,
+.app-content div {
+  min-width: 0;
+}
+
+/* ---------- Shared station headers ---------- */
+.ia-station-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 2px 2px 17px;
+}
+
+.ia-station-header > div:first-child {
+  min-width: 0;
+}
+
+.ia-station-header .eyebrow {
+  margin: 0 0 5px;
+  color: var(--ia-tertiary);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.ia-station-header h1 {
+  margin: 0;
+  color: var(--ia-text);
+  font-size: clamp(31px, 8vw, 40px);
+  line-height: 1.02;
+  font-weight: 790;
+  letter-spacing: -.055em;
+}
+
+.ia-station-header p:last-child {
+  max-width: 470px;
+  margin: 8px 0 0;
+  color: var(--ia-secondary);
+  font-size: 12px;
+  line-height: 1.48;
+  letter-spacing: -.018em;
+}
+
+/* ---------- Home: Today / overview / coming soon ---------- */
+.home-topbar {
+  min-height: 104px;
+  margin: 0 2px 15px;
+  padding-top: 4px;
+  align-items: flex-start;
+}
+
+.home-topbar .date-label {
+  margin: 0 0 7px;
+  color: var(--ia-tertiary);
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.home-title-row {
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.home-title-row h1 {
+  margin: 0;
+  color: var(--ia-text);
+  font-size: clamp(28px, 7.8vw, 37px);
+  line-height: 1.03;
+  font-weight: 790;
+  letter-spacing: -.06em;
+}
+
+.home-title-row h1 > span {
+  color: var(--ia-accent);
+}
+
+.ia-home-subtitle {
+  margin: 7px 0 0;
+  color: var(--ia-secondary);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.home-top-actions {
+  padding-top: 7px;
+}
+
+.ia-home-primary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 13px;
+}
+
+.ia-home-primary > .current-class-card {
+  margin: 0;
+  padding: 22px;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-xl);
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-home-primary .current-class-copy h2 {
+  margin-top: 5px;
+  color: var(--ia-text);
+  font-size: clamp(28px, 8vw, 38px);
+  line-height: 1.02;
+  font-weight: 800;
+  letter-spacing: -.06em;
+}
+
+.ia-home-primary .current-class-label {
+  color: var(--ia-accent);
+}
+
+.ia-home-primary .current-class-copy > p:last-child,
+.ia-home-primary .next-class-row span {
+  color: var(--ia-secondary);
+}
+
+.ia-home-primary .next-class-row {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ia-line);
+  background: transparent;
+}
+
+.ia-home-today-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-lg);
+  background: var(--ia-surface);
+}
+
+.ia-home-today-flow > .home-section {
+  margin: 0;
+  padding: 17px 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ia-home-today-flow > .home-section + .home-section {
+  border-top: 1px solid var(--ia-line);
+}
+
+.ia-home-today-flow .section-heading {
+  margin-bottom: 10px;
+}
+
+.ia-home-today-flow .section-heading h2 {
+  color: var(--ia-text);
+  font-size: 15px;
+  font-weight: 730;
+  letter-spacing: -.035em;
+}
+
+.ia-home-today-flow .section-heading > span,
+.ia-home-today-flow .section-note {
+  color: var(--ia-tertiary);
+  font-size: 9.5px;
+}
+
+.ia-home-today-flow .todo-home-list,
+.ia-home-today-flow .period-strip {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ia-home-today-flow .todo-home-item {
+  min-height: 52px;
+  padding-inline: 0;
+}
+
+.ia-home-today-flow .todo-home-item:nth-child(n+3) {
+  display: none;
+}
+
+.ia-home-today-flow .period-strip {
+  display: grid;
+  grid-template-columns: repeat(var(--period-count, 7), minmax(42px, 1fr));
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.ia-home-today-flow .period-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.ia-home-today-flow .period-item {
+  min-width: 42px;
+  min-height: 51px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ia-surface-soft);
+  box-shadow: none;
+}
+
+.ia-home-today-flow .period-item.is-current,
+.ia-home-today-flow .period-item.is-next {
+  background: var(--ia-accent-soft);
+  color: var(--ia-accent);
+}
+
+.ia-home-overview {
+  margin-top: 18px;
+}
+
+.ia-home-overview .preview-home-signals {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ia-home-overview .preview-home-signals-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 2px 10px;
+}
+
+.ia-home-overview .preview-home-signals-heading h2 {
+  margin: 0;
+  color: var(--ia-text);
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -.04em;
+}
+
+.ia-home-overview .preview-home-signals-heading span {
+  color: var(--ia-tertiary);
+  font-size: 10px;
+}
+
+.ia-home-overview .preview-home-signals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  overflow: visible;
+  padding: 0;
+}
+
+.ia-home-overview .preview-home-signal {
+  width: auto;
+  min-width: 0;
+  min-height: 86px;
+  padding: 14px;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-md);
+  background: var(--ia-surface);
+  box-shadow: none;
+  text-align: left;
+}
+
+.ia-home-overview .preview-home-signal strong {
+  color: var(--ia-text);
+}
+
+.ia-home-overview .preview-home-signal p,
+.ia-home-overview .preview-home-signal-head span {
+  color: var(--ia-secondary);
+}
+
+.ia-home-coming {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ia-home-coming > .home-section,
+.ia-home-coming > .meal-preview {
+  margin: 0;
+  padding: 17px 18px;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-lg);
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-home-coming .academic-home-list,
+.ia-home-coming .stage3-home-surface {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ia-home-coming .academic-home-item:nth-child(n+3) {
+  display: none;
+}
+
+.home-stack.is-meal-priority > .ia-home-primary {
+  order: -2;
+}
+
+.home-stack.is-meal-priority > .ia-home-coming {
+  order: -1;
+}
+
+/* ---------- Our Class: hub before subsection ---------- */
+.ia-class-hub {
+  display: block;
+}
+
+.ia-class-presence {
+  flex: 0 0 auto;
+  min-width: 74px;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  padding: 10px 12px;
+  border: 1px solid var(--ia-line);
+  border-radius: 16px;
+  background: var(--ia-surface);
+}
+
+.ia-class-presence strong {
+  color: var(--ia-text);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ia-class-presence span {
+  color: var(--ia-tertiary);
+  font-size: 9.5px;
+}
+
+.ia-class-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ia-class-overview > span {
+  display: grid;
+  gap: 3px;
+  padding: 13px 14px;
+  border: 1px solid var(--ia-line);
+  border-radius: 16px;
+  background: var(--ia-surface);
+}
+
+.ia-class-overview b {
+  color: var(--ia-text);
+  font-size: 12px;
+  font-weight: 710;
+}
+
+.ia-class-overview small {
+  color: var(--ia-tertiary);
+  font-size: 9.5px;
+}
+
+.ia-class-hub .class-top-segment {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.ia-class-content {
+  min-width: 0;
+}
+
+.ia-class-content .page-header,
+.ia-class-content .preview-board-header {
+  margin-top: 4px;
+}
+
+/* ---------- Schedule: one station, filters secondary ---------- */
+.ia-schedule-current {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid var(--ia-line);
+  border-radius: 999px;
+  background: var(--ia-accent-soft);
+  color: var(--ia-accent);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.ia-schedule-filter {
+  margin-bottom: 14px;
+}
+
+.ia-schedule-filter .schedule-top-segment {
+  margin: 0;
+}
+
+.ia-schedule-content {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.ia-schedule-content .todo-list,
+.ia-schedule-content .academic-list,
+.ia-schedule-content .meal-list,
+.ia-schedule-content .stage3-meal-list {
+  overflow: hidden;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-lg);
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-schedule-content .todo-item,
+.ia-schedule-content .academic-item,
+.ia-schedule-content .stage3-meal-row {
+  border-color: var(--ia-line);
+}
+
+/* ---------- Study: action first, community second ---------- */
+.ia-study-page .preview-study-header {
+  margin-bottom: 16px;
+}
+
+.ia-study-workspace {
+  gap: 15px;
+}
+
+.ia-study-page .preview-study-control-card {
+  padding: 21px;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-xl);
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-study-page .preview-study-control-card:has(.preview-study-action-dock.is-active) .preview-study-running-time {
+  width: min(58vw, 218px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  margin: 14px auto 4px;
+  border: 8px solid var(--ia-accent-soft);
+  border-radius: 50%;
+  background: var(--ia-surface-soft);
+  color: var(--ia-text);
+  font-size: clamp(32px, 9vw, 46px);
+  line-height: 1;
+}
+
+.ia-study-page .preview-study-control-card:has(.preview-study-action-dock.is-active) .preview-study-active-subject,
+.ia-study-page .preview-study-control-card:has(.preview-study-action-dock.is-active) .preview-study-live-row {
+  text-align: center;
+  justify-content: center;
+}
+
+.ia-study-page .preview-study-today-summary {
+  margin-top: 17px;
+  border-color: var(--ia-line);
+}
+
+.ia-study-page .preview-study-live-list,
+.ia-study-page .preview-study-today-list {
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-lg);
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-study-page .preview-study-section-heading {
+  padding-inline: 2px;
+}
+
+/* ---------- AI: compose first, explanation second ---------- */
+.ia-ai-workspace {
+  display: grid;
+  gap: 13px;
+}
+
+.ia-ai-workspace .s-hub-ai-page-hero {
+  margin-bottom: 0;
+  padding: 2px 2px 5px;
+}
+
+.ia-ai-workspace .s-hub-ai-page-mark {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--ia-line);
+  border-radius: 15px;
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-ai-workspace .s-hub-ai-page-title h1 {
+  color: var(--ia-text);
+}
+
+.ia-ai-workspace .s-hub-ai-page-title p:last-child {
+  color: var(--ia-secondary);
+}
+
+.ia-ai-workspace > .s-hub-ai-content {
+  order: 1;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--ia-line);
+  border-radius: var(--ia-radius-xl);
+  background: var(--ia-surface);
+  box-shadow: none;
+}
+
+.ia-ai-workspace .s-hub-ai-page-capabilities {
+  order: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.ia-ai-workspace .s-hub-ai-page-capability {
+  min-height: 72px;
+  padding: 11px;
+  border: 1px solid var(--ia-line);
+  border-radius: 17px;
+  background: var(--ia-surface-quiet);
+  box-shadow: none;
+}
+
+.ia-ai-workspace .s-hub-ai-page-capability-icon {
+  background: var(--ia-surface-soft);
+}
+
+/* ---------- Existing canonical motion owns transitions ---------- */
+.ia-home-primary,
+.ia-home-overview,
+.ia-home-coming,
+.ia-class-overview,
+.ia-schedule-filter,
+.ia-ai-workspace > .s-hub-ai-content,
+.ia-ai-workspace .s-hub-ai-page-capability {
+  transition:
+    background 220ms var(--motion-soft),
+    border-color 220ms var(--motion-soft),
+    color 220ms var(--motion-soft);
+}
+
+@media (min-width: 640px) {
+  .ia-home-primary {
+    grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr);
+    align-items: stretch;
+  }
+
+  .ia-home-today-flow {
+    height: 100%;
+  }
+
+  .ia-home-overview .preview-home-signals-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ia-home-coming {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ia-study-workspace {
+    grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
+    align-items: start;
+  }
+
+  .ia-study-workspace > .preview-study-control-card {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 639px) {
+  .app-content {
+    padding-inline: 17px;
+  }
+
+  .ia-station-header {
+    align-items: flex-start;
+  }
+
+  .ia-station-header p:last-child {
+    max-width: 310px;
+  }
+
+  .ia-home-overview .preview-home-signal {
+    min-height: 80px;
+  }
+
+  .ia-ai-workspace .s-hub-ai-page-capabilities {
+    grid-template-columns: repeat(3, minmax(164px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .ia-ai-workspace .s-hub-ai-page-capabilities::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .app-content {
+    padding-inline: 15px;
+  }
+
+  .ia-class-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .ia-home-overview .preview-home-signals-grid {
+    gap: 7px;
+  }
+
+  .ia-home-overview .preview-home-signal {
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ia-home-primary,
+  .ia-home-overview,
+  .ia-home-coming,
+  .ia-class-overview,
+  .ia-schedule-filter,
+  .ia-ai-workspace > .s-hub-ai-content,
+  .ia-ai-workspace .s-hub-ai-page-capability {
+    transition-duration: .01ms !important;
+  }
+}
