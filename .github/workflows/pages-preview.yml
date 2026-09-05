@@ -228,25 +228,7 @@ jobs:
               && grep -Fq "key.startsWith('school-preview-')" <<< "$s" \
               && grep -Fq '학교장 재량휴업일' <<< "$f"; then
               printf '%s' "$f" > /tmp/stage1-smoke.json
-              node --input-type=module <<'NODE'
-              import { readFileSync } from 'node:fs'
-              const fixture = JSON.parse(readFileSync('/tmp/stage1-smoke.json', 'utf8'))
-              const assert = (condition, message) => {
-                if (!condition) throw new Error(message)
-              }
-              assert(fixture.normal.version === 'experience-state-stage1-v1', 'normal version mismatch')
-              assert(fixture.normal.primary === 'class-active', 'normal class state mismatch')
-              assert(fixture.normal.schoolKind === 'class', 'normal school kind mismatch')
-              assert(fixture.holiday.primary === 'normal', 'holiday primary mismatch')
-              assert(fixture.holiday.schoolKind === 'holiday', 'holiday school kind mismatch')
-              assert(fixture.holiday.secondary.includes('holiday'), 'holiday secondary mismatch')
-              assert(fixture.holiday.holidayName === '대체공휴일', 'holiday event mismatch')
-              assert(fixture.discretionary.primary === 'normal', 'discretionary primary mismatch')
-              assert(fixture.discretionary.schoolKind === 'holiday', 'discretionary school kind mismatch')
-              assert(fixture.discretionary.secondary.includes('holiday'), 'discretionary secondary mismatch')
-              assert(fixture.discretionary.holidayName === '학교장 재량휴업일', 'discretionary event mismatch')
-              assert(fixture.discretionary.dayOffType === '휴업일', 'discretionary day-off type mismatch')
-              NODE
+              node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync('/tmp/stage1-smoke.json','utf8'));const a=(c,m)=>{if(!c)throw new Error(m)};a(x.normal.version==='experience-state-stage1-v1','normal version mismatch');a(x.normal.primary==='class-active','normal class state mismatch');a(x.normal.schoolKind==='class','normal school kind mismatch');a(x.holiday.primary==='normal','holiday primary mismatch');a(x.holiday.schoolKind==='holiday','holiday school kind mismatch');a(x.holiday.secondary.includes('holiday'),'holiday secondary mismatch');a(x.holiday.holidayName==='대체공휴일','holiday event mismatch');a(x.discretionary.primary==='normal','discretionary primary mismatch');a(x.discretionary.schoolKind==='holiday','discretionary school kind mismatch');a(x.discretionary.secondary.includes('holiday'),'discretionary secondary mismatch');a(x.discretionary.holidayName==='학교장 재량휴업일','discretionary event mismatch');a(x.discretionary.dayOffType==='휴업일','discretionary day-off type mismatch')"
               echo "Stage 1 Preview hosted smoke passed: normal + holiday + discretionary (${PAGE_URL})"
               exit 0
             fi
