@@ -5,6 +5,9 @@ import {
   EXPERIENCE_PRIMARY,
   EXPERIENCE_SECONDARY,
   EXPERIENCE_STATE_VERSION,
+  academicEventRawDate,
+  isAcademicDayOffEvent,
+  officialHolidayForDate,
   resolveExperienceState,
 } from '../src/experience-state.js'
 
@@ -62,14 +65,31 @@ test('weekend suppresses cached weekday school state', () => {
   assert.ok(state.secondary.includes(EXPERIENCE_SECONDARY.WEEKEND))
 })
 
+test('canonical academic day-off helpers recognize NEIS date and day-off signals', () => {
+  const now = at('2026-09-07T10:00:00+09:00')
+  const publicHoliday = { rawDate: '20260907', name: '대체공휴일', dayOffType: '공휴일' }
+  const discretionary = { rawDate: '20260907', name: '학교장 재량휴업일', dayOffType: '휴업일' }
+  const normalDay = { rawDate: '20260907', name: '정상 수업', dayOffType: '해당없음' }
+
+  assert.equal(academicEventRawDate(publicHoliday), '20260907')
+  assert.equal(isAcademicDayOffEvent(publicHoliday), true)
+  assert.equal(isAcademicDayOffEvent(discretionary), true)
+  assert.equal(isAcademicDayOffEvent(normalDay), false)
+  assert.equal(officialHolidayForDate([publicHoliday], now), publicHoliday)
+  assert.equal(officialHolidayForDate([discretionary], now), discretionary)
+  assert.equal(officialHolidayForDate([normalDay], now), null)
+})
+
 test('official holiday suppresses timetable class state', () => {
+  const holiday = { rawDate: '20260907', name: '대체공휴일', dayOffType: '공휴일' }
   const state = resolveExperienceState({
     now: at('2026-09-07T10:00:00+09:00'),
     schoolState: school('class'),
-    academicEvents: [{ rawDate: '20260907', name: '대체공휴일', dayOffType: '공휴일' }],
+    academicEvents: [holiday],
   })
   assert.equal(state.primary, EXPERIENCE_PRIMARY.NORMAL)
   assert.equal(state.context.school.kind, 'holiday')
+  assert.equal(state.context.school.holiday, holiday)
   assert.ok(state.secondary.includes(EXPERIENCE_SECONDARY.HOLIDAY))
 })
 

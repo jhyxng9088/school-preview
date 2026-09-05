@@ -22,7 +22,7 @@ export const EXPERIENCE_SECONDARY = Object.freeze({
 
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 const NOT_DAY_OFF = /^(?:해당\s*없음|수업일|정상수업|정상)$/
-const DAY_OFF_NAME = /공휴일|대체공휴일|휴업일|재량휴업|개교기념|설날|추석|어린이날|현충일|광복절|개천절|한글날|성탄절|부처님\s*오신\s*날/
+const DAY_OFF_SIGNAL = /공휴일|대체\s*공휴일|휴업일|재량\s*휴업|개교기념|설날|추석|어린이날|현충일|광복절|개천절|한글날|성탄절|부처님\s*오신\s*날/
 
 function kstParts(value) {
   const date = value instanceof Date ? value : new Date(value)
@@ -48,21 +48,27 @@ function experienceRawDate(now = new Date()) {
   return experienceDateKey(now).replaceAll('-', '')
 }
 
-function eventRawDate(event) {
-  const raw = String(event?.rawDate || '').replace(/[^0-9]/g, '')
-  if (raw.length === 8) return raw
+export function academicEventRawDate(event) {
+  const raw = String(event?.rawDate ?? '').trim().replace(/[^0-9]/g, '')
+  if (/^\d{8}$/.test(raw)) return raw
   const date = event?.date instanceof Date ? event.date : null
-  return date ? experienceRawDate(date) : ''
+  return date && !Number.isNaN(date.getTime()) ? experienceRawDate(date) : ''
+}
+
+export function isAcademicDayOffEvent(event) {
+  const dayOffType = String(event?.dayOffType ?? '').trim()
+  const name = String(event?.name ?? event?.title ?? '').trim()
+  if (dayOffType && NOT_DAY_OFF.test(dayOffType)) return false
+  return DAY_OFF_SIGNAL.test(`${dayOffType} ${name}`)
 }
 
 export function officialHolidayForDate(academicEvents, now = new Date()) {
   const today = experienceRawDate(now)
-  return (Array.isArray(academicEvents) ? academicEvents : []).find((event) => {
-    if (eventRawDate(event) !== today) return false
-    const dayOffType = String(event?.dayOffType || '').trim()
-    if (dayOffType && !NOT_DAY_OFF.test(dayOffType)) return true
-    return DAY_OFF_NAME.test(String(event?.name || event?.title || ''))
-  }) || null
+  for (const event of Array.isArray(academicEvents) ? academicEvents : []) {
+    if (academicEventRawDate(event) !== today) continue
+    if (isAcademicDayOffEvent(event)) return event
+  }
+  return null
 }
 
 function reminderDueMs(todo) {
