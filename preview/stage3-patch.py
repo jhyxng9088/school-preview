@@ -53,7 +53,7 @@ if phase == 'isolate':
     sw = root / 'public/sw.js'
     text = sw.read_text()
     marker = "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-experience-stage2-v1'"
-    stage3_marker = "const PREVIEW_LIVE_HOME_LAYER = 'live-home-stage3-v1'"
+    stage3_marker = "const PREVIEW_LIVE_HOME_LAYER = 'live-home-stage3-v2'"
     if text.count(marker) != 1:
         raise SystemExit('Stage 2 service worker marker changed before Stage 3')
     if stage3_marker not in text:
@@ -65,15 +65,15 @@ if phase == 'isolate':
     marker = '<meta name="s-hub-preview-layer" content="experience-surface-stage2-v1" />'
     replacement = (
         '<meta name="s-hub-preview-surface" content="experience-surface-stage2-v1" />'
-        '<meta name="s-hub-preview-layer" content="live-home-stage3-v1" />'
+        '<meta name="s-hub-preview-layer" content="live-home-stage3-v2" />'
     )
     if text.count(marker) != 1:
         raise SystemExit('Stage 2 preview layer marker changed before Stage 3')
     index.write_text(text.replace(marker, replacement, 1))
 
     smoke = {
-        'version': 'live-home-stage3-v1',
+        'version': 'live-home-stage3-v2',
         'baseline': baseline,
-        'sequence': ['adaptive-hero', 'today', 'timetable-flow', 'action-focus', 'reminders', 'class-live', 'upcoming'],
+        'sequence': ['adaptive-hero', 'context-rail', 'timetable-flow', 'action-focus', 'reminders', 'class-live', 'upcoming'],
     }
     (root / 'public/stage3-smoke.json').write_text(json.dumps(smoke, ensure_ascii=False, indent=2) + '\n')
