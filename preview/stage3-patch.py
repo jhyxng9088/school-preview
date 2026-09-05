@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import subprocess
 import sys
 
 if len(sys.argv) != 4:
@@ -78,3 +79,8 @@ if phase == 'isolate':
         'modes': ['school', 'focus', 'rest', 'setup'],
     }
     (root / 'public/stage3-smoke.json').write_text(json.dumps(smoke, ensure_ascii=False, indent=2) + '\n')
+
+stage4_patch = preview_dir / 'stage4-patch.py'
+if not stage4_patch.exists():
+    raise SystemExit('missing Stage 4 patch controller')
+subprocess.run([sys.executable, str(stage4_patch), str(root), baseline, phase], check=True)
