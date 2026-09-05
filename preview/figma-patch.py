@@ -60,8 +60,8 @@ profile_line = "const NOTIFICATION_PROFILE_CACHE = 'school-notification-profile-
 cleanup = ".filter((key) => ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))"
 if not cache_line or profile_line not in text or cleanup not in text:
     raise SystemExit('Service worker markers changed')
-text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-ia-redesign-v1'", 1)
-text = text.replace(profile_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-ia-redesign-v1'", 1)
+text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-ia-redesign-v2'", 1)
+text = text.replace(profile_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-ia-redesign-v2'", 1)
 text = text.replace(cleanup, ".filter((key) => key.startsWith('school-preview-') && ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))", 1)
 app_shell = "const APP_SHELL = ["
 if text.count(app_shell) != 1:
@@ -76,7 +76,7 @@ if text.count('</head>') != 1:
     raise SystemExit('index head marker changed')
 inject = (
     f'<meta name="s-hub-preview-baseline" content="{baseline}" />'
-    '<meta name="s-hub-preview-layer" content="ia-redesign-v1" />'
-    '<link rel="stylesheet" href="./preview-dark-ui.css?v=16" />'
+    '<meta name="s-hub-preview-layer" content="ia-redesign-v2" />'
+    '<link rel="stylesheet" href="./preview-dark-ui.css?v=17" />'
 )
 index.write_text(text.replace('</head>', inject + '</head>', 1))

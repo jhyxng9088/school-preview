@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PREVIEW_STYLE_ID: ia-redesign-v1
+  PREVIEW_STYLE_ID: ia-redesign-v2
 
 jobs:
   build:
@@ -49,9 +49,9 @@ jobs:
       - name: Guard preview layout ownership
         run: |
           set -euo pipefail
-          grep -Fq 'S-Hub information architecture preview v1' preview-control/preview/ia-redesign.css
+          grep -Fq 'S-Hub information architecture preview v2' preview-control/preview/ia-redesign.css
           grep -Fq 'S-Hub IA layout ownership supplement v1' preview-control/preview/ia-layout-owner.css
-          grep -Fq '.ia-schedule-hub' preview-control/preview/ia-layout-owner.css
+          grep -Fq '.ia2-schedule-hub' preview-control/preview/ia-redesign.css
           grep -Fq 'patchIARedesignSource' preview-control/preview/ia-redesign-source-patch.js
           ! grep -Eq 'position:[[:space:]]*(absolute|fixed)' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
           ! grep -Eq 'unified-school-sheet|unified-sheet-backdrop' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
@@ -79,12 +79,11 @@ jobs:
               > production-source/public/preview-dark-ui.css
           python3 preview-control/preview/figma-patch.py production-source "$MAIN_BASELINE_SHA"
 
-          check_marker 'S-Hub information architecture preview v1' production-source/public/preview-dark-ui.css 'preview CSS copied'
-          check_marker 'S-Hub IA layout ownership supplement v1' production-source/public/preview-dark-ui.css 'layout owner CSS copied'
-          check_marker '.ia-home-primary' production-source/public/preview-dark-ui.css 'home layout CSS present'
-          check_marker '.ia-class-hub' production-source/public/preview-dark-ui.css 'class hub CSS present'
-          check_marker '.ia-schedule-hub' production-source/public/preview-dark-ui.css 'schedule hub CSS present'
-          check_marker '.ia-ai-workspace' production-source/public/preview-dark-ui.css 'AI workspace CSS present'
+          check_marker 'S-Hub information architecture preview v2' production-source/public/preview-dark-ui.css 'preview CSS copied'
+          check_marker '.ia2-home-now' production-source/public/preview-dark-ui.css 'home hero CSS present'
+          check_marker '.ia2-class-hub' production-source/public/preview-dark-ui.css 'class hub CSS present'
+          check_marker '.ia2-schedule-hub' production-source/public/preview-dark-ui.css 'schedule hub CSS present'
+          check_marker '.ia2-ai-workspace' production-source/public/preview-dark-ui.css 'AI workspace CSS present'
           check_marker 'patchIARedesignSource' production-source/src/ia-preview-patch.js 'IA source patch copied'
           check_marker "import { patchIARedesignSource } from './src/ia-preview-patch.js'" production-source/vite.config.js 'IA Vite import wired'
           check_marker 'next = patchIARedesignSource(next, cleanId)' production-source/vite.config.js 'IA final transform wired'
@@ -98,27 +97,28 @@ jobs:
         run: |
           set -euo pipefail
           grep -Fq 's-hub-preview-baseline' dist/index.html
-          grep -Fq 'ia-redesign-v1' dist/index.html
-          grep -Fq 'preview-dark-ui.css?v=16' dist/index.html
-          grep -Fq 'S-Hub information architecture preview v1' dist/preview-dark-ui.css
-          grep -Fq 'S-Hub IA layout ownership supplement v1' dist/preview-dark-ui.css
-          grep -Fq '.ia-home-primary' dist/preview-dark-ui.css
-          grep -Fq '.ia-class-hub' dist/preview-dark-ui.css
-          grep -Fq '.ia-schedule-hub' dist/preview-dark-ui.css
-          grep -Fq '.ia-study-page' dist/preview-dark-ui.css
-          grep -Fq '.ia-ai-workspace' dist/preview-dark-ui.css
-          grep -Fq 'school-preview-shell-ia-redesign-v1' dist/sw.js
+          grep -Fq 'ia-redesign-v2' dist/index.html
+          grep -Fq 'preview-dark-ui.css?v=17' dist/index.html
+          grep -Fq 'S-Hub information architecture preview v2' dist/preview-dark-ui.css
+          grep -Fq '.ia2-home-now' dist/preview-dark-ui.css
+          grep -Fq '.ia2-home-stream' dist/preview-dark-ui.css
+          grep -Fq '.ia2-class-hub' dist/preview-dark-ui.css
+          grep -Fq '.ia2-schedule-hub' dist/preview-dark-ui.css
+          grep -Fq '.ia2-study-page' dist/preview-dark-ui.css
+          grep -Fq '.ia2-ai-workspace' dist/preview-dark-ui.css
+          grep -Fq 'school-preview-shell-ia-redesign-v2' dist/sw.js
           grep -Fq "key.startsWith('school-preview-')" dist/sw.js
           grep -Fq "'./preview-dark-ui.css'" dist/sw.js
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
-          grep -Fq 'ia-home-primary' "$bundle"
-          grep -Fq 'ia-class-hub' "$bundle"
-          grep -Fq 'ia-schedule-hub' "$bundle"
-          grep -Fq 'ia-ai-workspace' "$bundle"
-          grep -Fq 'ia-study-page' "$bundle"
-          grep -Fq '시간표와 게시판을 한 공간에서 이어서 확인해요.' "$bundle"
-          grep -Fq '종류보다 시간의 흐름을 먼저 보고' "$bundle"
+          grep -Fq 'ia2-home-canvas' "$bundle"
+          grep -Fq 'ia2-home-now' "$bundle"
+          grep -Fq 'ia2-class-hub' "$bundle"
+          grep -Fq 'ia2-schedule-hub' "$bundle"
+          grep -Fq 'ia2-ai-workspace' "$bundle"
+          grep -Fq 'ia2-study-page' "$bundle"
+          grep -Fq '한 반의 흐름으로 이어집니다.' "$bundle"
+          grep -Fq '이번 주의 필요한 정보를 한 자리에서 넘겨 봐요.' "$bundle"
           grep -Fq 'preview-study-record-sheet' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
@@ -160,15 +160,14 @@ jobs:
             h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             c="$(curl -fsSL "${PAGE_URL}preview-dark-ui.css?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if grep -Fq 'ia-redesign-v1' <<< "$h" \
-              && grep -Fq 'preview-dark-ui.css?v=16' <<< "$h" \
-              && grep -Fq 'S-Hub information architecture preview v1' <<< "$c" \
-              && grep -Fq 'S-Hub IA layout ownership supplement v1' <<< "$c" \
-              && grep -Fq '.ia-home-primary' <<< "$c" \
-              && grep -Fq '.ia-class-hub' <<< "$c" \
-              && grep -Fq '.ia-schedule-hub' <<< "$c" \
-              && grep -Fq 'school-preview-shell-ia-redesign-v1' <<< "$s"; then
-              echo "IA preview smoke test passed: ${PAGE_URL}"
+            if grep -Fq 'ia-redesign-v2' <<< "$h" \
+              && grep -Fq 'preview-dark-ui.css?v=17' <<< "$h" \
+              && grep -Fq 'S-Hub information architecture preview v2' <<< "$c" \
+              && grep -Fq '.ia2-home-now' <<< "$c" \
+              && grep -Fq '.ia2-class-hub' <<< "$c" \
+              && grep -Fq '.ia2-schedule-hub' <<< "$c" \
+              && grep -Fq 'school-preview-shell-ia-redesign-v2' <<< "$s"; then
+              echo "IA v2 preview smoke test passed: ${PAGE_URL}"
               exit 0
             fi
             sleep 4
