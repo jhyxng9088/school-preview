@@ -1,4 +1,4 @@
-export const STAGE3_HOME_VERSION = 'live-home-stage3-v2'
+export const STAGE3_HOME_VERSION = 'live-home-stage3-v3'
 
 function cleanTitle(todo) {
   return String(todo?.title || todo?.text || todo?.content || todo?.name || '').trim() || '리마인더 확인'
@@ -44,6 +44,54 @@ function sameTodo(left, right) {
   if (!left || !right) return false
   if (left.id && right.id) return String(left.id) === String(right.id)
   return cleanTitle(left) === cleanTitle(right)
+}
+
+export function buildStage3LayoutModel(state = {}) {
+  const primary = String(state?.primary || 'normal')
+  const school = state?.context?.school || {}
+  const schoolKind = String(school.kind || 'normal')
+
+  if (schoolKind === 'holiday' || schoolKind === 'weekend') {
+    return {
+      version: STAGE3_HOME_VERSION,
+      mode: 'rest',
+      primary,
+      timetableVisible: false,
+      timetableKicker: '다음 등교 전',
+      timetableTitle: '시간표',
+    }
+  }
+
+  if (schoolKind === 'no-timetable') {
+    return {
+      version: STAGE3_HOME_VERSION,
+      mode: 'setup',
+      primary,
+      timetableVisible: false,
+      timetableKicker: '설정 후',
+      timetableTitle: '시간표',
+    }
+  }
+
+  if (primary === 'urgent-reminder' || primary === 'after-school' || schoolKind === 'done') {
+    return {
+      version: STAGE3_HOME_VERSION,
+      mode: 'focus',
+      primary,
+      timetableVisible: true,
+      timetableKicker: schoolKind === 'done' ? '다음' : '오늘',
+      timetableTitle: schoolKind === 'done' ? '내일 시간표' : '수업 흐름',
+    }
+  }
+
+  return {
+    version: STAGE3_HOME_VERSION,
+    mode: 'school',
+    primary,
+    timetableVisible: true,
+    timetableKicker: '오늘',
+    timetableTitle: '수업 흐름',
+  }
 }
 
 function currentContext(state) {
@@ -105,8 +153,10 @@ function nextContext(state) {
 export function buildStage3ContextModel({ state = {}, todos = [] } = {}) {
   const list = sortedActiveTodos(todos)
   const nearest = list[0] || null
+  const layout = buildStage3LayoutModel(state)
   return {
     version: STAGE3_HOME_VERSION,
+    mode: layout.mode,
     segments: [
       currentContext(state),
       nextContext(state),
@@ -117,6 +167,21 @@ export function buildStage3ContextModel({ state = {}, todos = [] } = {}) {
       },
     ],
   }
+}
+
+export function buildStage3HeadingModel(zone, state = {}) {
+  const layout = buildStage3LayoutModel(state)
+  if (zone === 'timetable') {
+    return { kicker: layout.timetableKicker, title: layout.timetableTitle }
+  }
+  if (zone === 'focus') {
+    return layout.primary === 'urgent-reminder'
+      ? { kicker: '우선 확인', title: '마감이 가까운 일정' }
+      : { kicker: '우선순위', title: '해야 할 것' }
+  }
+  if (zone === 'reminders') return { kicker: '남은 일정', title: '리마인더' }
+  if (zone === 'upcoming') return { kicker: '다가오는 것', title: '학사일정과 급식' }
+  return { kicker: '', title: '' }
 }
 
 export function buildStage3ActionModel({ state = {}, todos = [] } = {}) {

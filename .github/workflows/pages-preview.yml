@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PREVIEW_LAYER_ID: live-home-stage3-v2
+  PREVIEW_LAYER_ID: live-home-stage3-v3
 
 jobs:
   build:
@@ -101,7 +101,7 @@ jobs:
             preview-control/preview/stage2-experience-surface-source-patch.js
           ! grep -Fq '@keyframes' preview-control/preview/stage2-experience-surface.css
 
-      - name: Guard Stage 3 live home ownership
+      - name: Guard Stage 3 adaptive home ownership
         run: |
           set -euo pipefail
           for file in \
@@ -113,22 +113,24 @@ jobs:
             stage3-patch.py; do
             test -f "preview-control/preview/$file"
           done
-          grep -Fq 'live-home-stage3-v2' preview-control/preview/stage3-home-flow-model.js
-          grep -Fq 'Stage3ContextRail' preview-control/preview/stage3-home-flow.jsx
-          grep -Fq 'data-stage3-live-home="live-home-stage3-v2"' preview-control/preview/stage3-home-source-patch.js
+          grep -Fq 'live-home-stage3-v3' preview-control/preview/stage3-home-flow-model.js
+          grep -Fq 'buildStage3LayoutModel' preview-control/preview/stage3-home-flow-model.js
+          grep -Fq 'Stage3HomeFrame' preview-control/preview/stage3-home-flow.jsx
+          grep -Fq 'data-stage3-mode' preview-control/preview/stage3-home-flow.jsx
+          grep -Fq 'Stage3HomeFrame homeStackRef' preview-control/preview/stage3-home-source-patch.js
           ! grep -ERq '\bfetch[[:space:]]*\(|MutationObserver|createPortal|setInterval|addEventListener' \
             preview-control/preview/stage3-home-flow-model.js \
             preview-control/preview/stage3-home-flow.jsx \
             preview-control/preview/stage3-home-source-patch.js
           ! grep -Fq '@keyframes' preview-control/preview/stage3-home-flow.css
 
-      - name: Apply Preview-only Stage 2 and Stage 3 live home
+      - name: Apply Preview-only Stage 2 and Stage 3 adaptive home
         run: |
           set -euo pipefail
           python3 preview-control/preview/stage2-patch.py production-source "$MAIN_BASELINE_SHA" overlay
           grep -Fq 'experience-surface-stage2-v1' production-source/src/experience-surface-model.js
-          grep -Fq 'live-home-stage3-v2' production-source/src/stage3-home-flow-model.js
-          grep -Fq 'Stage3ContextRail' production-source/src/stage3-home-flow.jsx
+          grep -Fq 'live-home-stage3-v3' production-source/src/stage3-home-flow-model.js
+          grep -Fq 'Stage3HomeFrame' production-source/src/stage3-home-flow.jsx
           grep -Fq 'next = patchExperienceSurfaceSource(next, cleanId)' production-source/vite.config.js
           grep -Fq 'next = patchStage3HomeSource(next, cleanId)' production-source/vite.config.js
           grep -Fq "base: '/school/'" production-source/vite.config.js
@@ -137,7 +139,7 @@ jobs:
         working-directory: production-source
         run: node --test tests/experience-surface-stage2.test.js
 
-      - name: Test Stage 3 Live Home model
+      - name: Test Stage 3 Adaptive Home model
         working-directory: production-source
         run: node --test tests/stage3-home-flow.test.js
 
@@ -153,13 +155,13 @@ jobs:
           grep -Fq "base: '/school-preview/'" production-source/vite.config.js
           grep -Fq 'experience-state-stage1-v1' production-source/index.html
           grep -Fq 'experience-surface-stage2-v1' production-source/index.html
-          grep -Fq 'live-home-stage3-v2' production-source/index.html
+          grep -Fq 'live-home-stage3-v3' production-source/index.html
           grep -Fq 'school-sync-preview' production-source/src/school-sync.js
           grep -Fq 'preview-class-' production-source/src/school-sync.js
           grep -Fq 'preview|' production-source/src/school-sync.js
           grep -Fq 'school-preview-shell-experience-stage2-v1' production-source/public/sw.js
           grep -Fq 'school-preview-notification-profile-experience-stage2-v1' production-source/public/sw.js
-          grep -Fq 'live-home-stage3-v2' production-source/public/sw.js
+          grep -Fq 'live-home-stage3-v3' production-source/public/sw.js
           grep -Fq "key.startsWith('school-preview-')" production-source/public/sw.js
           test -s production-source/public/stage3-smoke.json
 
@@ -171,7 +173,7 @@ jobs:
         working-directory: production-source
         run: npm run build
 
-      - name: Generate hosted Stage 2 state fixture
+      - name: Generate hosted live-home fixture
         working-directory: production-source
         run: |
           set -euo pipefail
@@ -179,13 +181,14 @@ jobs:
           import { writeFileSync } from 'node:fs'
           import { resolveExperienceState } from './src/experience-state.js'
           import { buildExperienceSurfaceModel } from './src/experience-surface-model.js'
-          import { buildStage3ContextModel } from './src/stage3-home-flow-model.js'
+          import { buildStage3ContextModel, buildStage3LayoutModel } from './src/stage3-home-flow-model.js'
 
           const at = (value) => new Date(value)
           const school = (kind, extra = {}) => ({ kind, configured: true, current: null, next: null, last: null, ...extra })
           const resolved = (input) => resolveExperienceState(input)
           const surface = (input) => buildExperienceSurfaceModel(resolved(input))
           const context = (input) => buildStage3ContextModel({ state: resolved(input), todos: input.todos || [] })
+          const layout = (input) => buildStage3LayoutModel(resolved(input))
           const current = { number: 1, subject: '정보', start: '09:10', end: '10:00' }
           const next = { number: 2, subject: '수학', start: '10:10', end: '11:00' }
           const classInput = {
@@ -193,9 +196,15 @@ jobs:
             schoolState: school('class', { current, next }),
             todos: [{ title: '영어 단어', dueDate: '2026-09-08', dueTime: '09:00' }],
           }
+          const urgentInput = {
+            now: at('2026-09-07T16:00:00+09:00'),
+            schoolState: school('done', { last: current }),
+            todos: [{ title: '수학 수행평가', dueDate: '2026-09-07', dueTime: '16:30' }],
+          }
           const fixture = {
             classState: surface(classInput),
             classContext: context(classInput),
+            classLayout: layout(classInput),
             holiday: surface({
               now: at('2026-09-07T10:00:00+09:00'),
               schoolState: school('class', { current }),
@@ -211,10 +220,15 @@ jobs:
               schoolState: school('class', { current, next }),
               studyActive: { subject: '영단어', startedAt: 1 },
             }),
-            urgent: surface({
-              now: at('2026-09-07T16:00:00+09:00'),
-              schoolState: school('done', { last: current }),
-              todos: [{ title: '수학 수행평가', dueDate: '2026-09-07', dueTime: '16:30' }],
+            urgent: surface(urgentInput),
+            urgentLayout: layout(urgentInput),
+            weekendLayout: buildStage3LayoutModel({
+              primary: 'normal',
+              context: { school: { kind: 'weekend' } },
+            }),
+            setupLayout: buildStage3LayoutModel({
+              primary: 'normal',
+              context: { school: { kind: 'no-timetable' } },
             }),
             offlineClass: surface({
               now: at('2026-09-07T09:30:00+09:00'),
@@ -232,24 +246,26 @@ jobs:
           grep -Fq 's-hub-preview-baseline' dist/index.html
           grep -Fq 'experience-state-stage1-v1' dist/index.html
           grep -Fq 'experience-surface-stage2-v1' dist/index.html
-          grep -Fq 'live-home-stage3-v2' dist/index.html
+          grep -Fq 'live-home-stage3-v3' dist/index.html
           grep -Fq 'school-preview-shell-experience-stage2-v1' dist/sw.js
           grep -Fq 'school-preview-notification-profile-experience-stage2-v1' dist/sw.js
-          grep -Fq 'live-home-stage3-v2' dist/sw.js
+          grep -Fq 'live-home-stage3-v3' dist/sw.js
           grep -Fq "key.startsWith('school-preview-')" dist/sw.js
           test -s dist/stage2-smoke.json
           test -s dist/stage3-smoke.json
           grep -Fq '학교장 재량휴업일' dist/stage2-smoke.json
           grep -Fq '영단어' dist/stage2-smoke.json
           grep -Fq '수학 수행평가' dist/stage2-smoke.json
-          grep -Fq 'live-home-stage3-v2' dist/stage3-smoke.json
-          grep -Fq 'context-rail' dist/stage3-smoke.json
+          grep -Fq 'live-home-stage3-v3' dist/stage3-smoke.json
+          grep -Fq 'adaptive-layout' dist/stage3-smoke.json
+          grep -Fq '"rest"' dist/stage3-smoke.json
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
           grep -Fq 'experience-state-stage1-v1' "$bundle"
           grep -Fq 'experience-surface-stage2-v1' "$bundle"
-          grep -Fq 'live-home-stage3-v2' "$bundle"
+          grep -Fq 'live-home-stage3-v3' "$bundle"
           grep -Fq 'data-stage3-live-home' "$bundle"
+          grep -Fq 'data-stage3-mode' "$bundle"
           grep -Fq 'data-experience-primary' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
@@ -293,19 +309,19 @@ jobs:
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             f="$(curl -fsSL "${PAGE_URL}stage2-smoke.json?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             g="$(curl -fsSL "${PAGE_URL}stage3-smoke.json?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if grep -Fq 'live-home-stage3-v2' <<< "$h" \
+            if grep -Fq 'live-home-stage3-v3' <<< "$h" \
               && grep -Fq 'school-preview-shell-experience-stage2-v1' <<< "$s" \
-              && grep -Fq 'live-home-stage3-v2' <<< "$s" \
+              && grep -Fq 'live-home-stage3-v3' <<< "$s" \
               && grep -Fq "key.startsWith('school-preview-')" <<< "$s" \
               && grep -Fq '학교장 재량휴업일' <<< "$f" \
               && grep -Fq '영단어' <<< "$f" \
               && grep -Fq '수학 수행평가' <<< "$f" \
-              && grep -Fq 'live-home-stage3-v2' <<< "$g" \
-              && grep -Fq 'context-rail' <<< "$g"; then
+              && grep -Fq 'live-home-stage3-v3' <<< "$g" \
+              && grep -Fq 'adaptive-layout' <<< "$g"; then
               printf '%s' "$f" > /tmp/stage2-smoke.json
               printf '%s' "$g" > /tmp/stage3-smoke.json
-              node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync('/tmp/stage2-smoke.json','utf8'));const y=JSON.parse(fs.readFileSync('/tmp/stage3-smoke.json','utf8'));const a=(c,m)=>{if(!c)throw new Error(m)};a(x.classState.version==='experience-surface-stage2-v1','class version');a(x.classState.primary==='class-active','class primary');a(x.classState.title==='정보','class title');a(x.classContext.version==='live-home-stage3-v2','context version');a(x.classContext.segments[0].value==='정보','context current');a(x.classContext.segments[1].value==='수학','context next');a(x.classContext.segments[2].value==='1개 남음','context todo');a(x.holiday.tone==='holiday','holiday tone');a(x.holiday.title==='대체공휴일','holiday title');a(x.discretionary.title==='학교장 재량휴업일','discretionary title');a(x.study.primary==='study-active','study primary');a(x.study.title==='영단어','study title');a(x.urgent.primary==='urgent-reminder','urgent primary');a(x.urgent.title==='수학 수행평가','urgent title');a(x.offlineClass.badges.includes('오프라인'),'offline badge');a(y.version==='live-home-stage3-v2','stage3 version');a(y.sequence.includes('context-rail'),'context rail sequence')"
-              echo "Stage 3 Preview hosted smoke passed: adaptive hero + context rail + timetable + reminders + class live (${PAGE_URL})"
+              node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync('/tmp/stage2-smoke.json','utf8'));const y=JSON.parse(fs.readFileSync('/tmp/stage3-smoke.json','utf8'));const a=(c,m)=>{if(!c)throw new Error(m)};a(x.classState.version==='experience-surface-stage2-v1','class version');a(x.classState.primary==='class-active','class primary');a(x.classState.title==='정보','class title');a(x.classContext.version==='live-home-stage3-v3','context version');a(x.classContext.mode==='school','context mode');a(x.classContext.segments[0].value==='정보','context current');a(x.classContext.segments[1].value==='수학','context next');a(x.classContext.segments[2].value==='1개 남음','context todo');a(x.classLayout.mode==='school','class layout');a(x.urgentLayout.mode==='focus','urgent layout');a(x.weekendLayout.mode==='rest'&&!x.weekendLayout.timetableVisible,'weekend layout');a(x.setupLayout.mode==='setup'&&!x.setupLayout.timetableVisible,'setup layout');a(x.holiday.tone==='holiday','holiday tone');a(x.holiday.title==='대체공휴일','holiday title');a(x.discretionary.title==='학교장 재량휴업일','discretionary title');a(x.study.primary==='study-active','study primary');a(x.study.title==='영단어','study title');a(x.urgent.primary==='urgent-reminder','urgent primary');a(x.urgent.title==='수학 수행평가','urgent title');a(x.offlineClass.badges.includes('오프라인'),'offline badge');a(y.version==='live-home-stage3-v3','stage3 version');a(y.sequence.includes('adaptive-layout'),'adaptive layout sequence');a(y.modes.includes('focus')&&y.modes.includes('rest'),'adaptive modes')"
+              echo "Stage 3 v3 Preview hosted smoke passed: state-aware hierarchy + context rail + timetable + reminders (${PAGE_URL})"
               exit 0
             fi
             sleep 4

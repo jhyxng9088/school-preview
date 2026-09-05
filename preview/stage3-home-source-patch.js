@@ -8,9 +8,15 @@ function replaceExact(source, marker, replacement, label) {
 function patchMainSource(source) {
   let next = String(source || '')
   const importMarker = "import { ExperienceSurface } from './experience-surface.jsx'\n"
-  const stage3Import = "import { Stage3ActionFocus, Stage3ContextRail } from './stage3-home-flow.jsx'\n"
+  const stage3Import = "import { Stage3ActionFocus, Stage3ContextRail, Stage3HomeFrame, Stage3ZoneHeading } from './stage3-home-flow.jsx'\n"
   if (!next.includes(stage3Import)) {
     next = replaceExact(next, importMarker, `${importMarker}${stage3Import}`, 'Stage 3 home import')
+  }
+
+  const timetableEmpty = "{futureDay ? '내일은 정규 수업이 없어.' : '오늘은 정규 수업이 없어.'}"
+  const timetableEmptyPolite = "{futureDay ? '내일은 정규 수업이 없어요.' : '오늘은 정규 수업이 없어요.'}"
+  if (next.includes(timetableEmpty)) {
+    next = replaceExact(next, timetableEmpty, timetableEmptyPolite, 'polite timetable empty copy')
   }
 
   const currentStack = `      <div ref={homeStackRef} className={\`home-stack \${mealPriority ? 'is-meal-priority' : ''}\`} data-home-lunch-ready="true">
@@ -28,19 +34,14 @@ function patchMainSource(source) {
         <Stage3MealPreview now={now} schoolData={schoolData} />
       </div>`
 
-  const stage3Stack = `      <div ref={homeStackRef} className={\`home-stack stage3-live-home \${mealPriority ? 'is-meal-priority' : ''}\`} data-home-lunch-ready="true" data-stage3-live-home="live-home-stage3-v2">
+  const stage3Stack = `      <Stage3HomeFrame homeStackRef={homeStackRef} mealPriority={mealPriority}>
         <section className="stage3-home-zone stage3-home-hero" aria-label="현재 학교생활">
           <ExperienceSurface />
           <Stage3ContextRail todos={todoData.todos} />
         </section>
 
         <section className="stage3-home-zone stage3-home-today" aria-labelledby="stage3-today-title">
-          <div className="stage3-home-zone-heading">
-            <div>
-              <p>오늘</p>
-              <h2 id="stage3-today-title">시간표 흐름</h2>
-            </div>
-          </div>
+          <Stage3ZoneHeading zone="timetable" id="stage3-today-title" />
           <TimetablePreview
             schedule={timetablePreviewSchedule}
             now={now}
@@ -51,22 +52,12 @@ function patchMainSource(source) {
         </section>
 
         <section className="stage3-home-zone stage3-home-focus" aria-labelledby="stage3-focus-title">
-          <div className="stage3-home-zone-heading">
-            <div>
-              <p>우선순위</p>
-              <h2 id="stage3-focus-title">해야 할 것</h2>
-            </div>
-          </div>
+          <Stage3ZoneHeading zone="focus" id="stage3-focus-title" />
           <Stage3ActionFocus todos={todoData.todos} onNavigate={onNavigate} />
         </section>
 
         <section className="stage3-home-zone stage3-home-reminders" aria-labelledby="stage3-reminder-title">
-          <div className="stage3-home-zone-heading">
-            <div>
-              <p>남은 일정</p>
-              <h2 id="stage3-reminder-title">리마인더</h2>
-            </div>
-          </div>
+          <Stage3ZoneHeading zone="reminders" id="stage3-reminder-title" />
           <TodoHomePreview todos={todoData.todos} categories={todoData.categories} now={now} />
         </section>
 
@@ -75,20 +66,15 @@ function patchMainSource(source) {
         </section>
 
         <section className="stage3-home-zone stage3-home-upcoming" aria-labelledby="stage3-upcoming-title">
-          <div className="stage3-home-zone-heading">
-            <div>
-              <p>다가오는 것</p>
-              <h2 id="stage3-upcoming-title">학사일정과 급식</h2>
-            </div>
-          </div>
+          <Stage3ZoneHeading zone="upcoming" id="stage3-upcoming-title" />
           <div className="stage3-upcoming-grid">
             <SharedAcademicPreview now={now} schoolData={schoolData} academicData={academicData} />
             <Stage3MealPreview now={now} schoolData={schoolData} />
           </div>
         </section>
-      </div>`
+      </Stage3HomeFrame>`
 
-  return replaceExact(next, currentStack, stage3Stack, 'home information hierarchy')
+  return replaceExact(next, currentStack, stage3Stack, 'adaptive home information hierarchy')
 }
 
 function patchHomeSignalsSource(source) {
@@ -112,9 +98,20 @@ function patchHomeSignalsSource(source) {
   return next
 }
 
+function patchTodoSource(source) {
+  const next = String(source || '')
+  return replaceExact(
+    next,
+    '<div className="compact-empty">아직 등록된 리마인더가 없어.</div>',
+    '<div className="compact-empty">아직 등록된 리마인더가 없어요.</div>',
+    'polite reminder empty copy',
+  )
+}
+
 export function patchStage3HomeSource(source, id = '') {
   const cleanId = String(id || '').split('?')[0]
   if (cleanId.endsWith('/main.jsx')) return patchMainSource(source)
   if (cleanId.endsWith('/preview-home-signals.jsx')) return patchHomeSignalsSource(source)
+  if (cleanId.endsWith('/todo.jsx')) return patchTodoSource(source)
   return String(source || '')
 }
