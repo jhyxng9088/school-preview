@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PREVIEW_STYLE_ID: ia-redesign-v2
+  PREVIEW_LAYER_ID: experience-state-stage1-v1
 
 jobs:
   build:
@@ -46,84 +46,75 @@ jobs:
           npm ci
           npm test
 
-      - name: Guard preview layout ownership
+      - name: Guard Stage 1 ownership
         run: |
           set -euo pipefail
-          grep -Fq 'S-Hub information architecture preview v2' preview-control/preview/ia-redesign.css
-          grep -Fq 'S-Hub IA layout ownership supplement v1' preview-control/preview/ia-layout-owner.css
-          grep -Fq '.ia2-schedule-hub' preview-control/preview/ia-redesign.css
-          grep -Fq 'patchIARedesignSource' preview-control/preview/ia-redesign-source-patch.js
-          ! grep -Eq 'position:[[:space:]]*(absolute|fixed)' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
-          ! grep -Eq 'unified-school-sheet|unified-sheet-backdrop' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
-          ! grep -Eq '@keyframes' preview-control/preview/ia-redesign.css preview-control/preview/ia-layout-owner.css
-          ! grep -Eq 'createPortal|UnifiedBottomSheet' preview-control/preview/ia-redesign-source-patch.js
+          test -f preview-control/preview/stage1-experience-state.js
+          test -f preview-control/preview/stage1-experience-state-react.jsx
+          test -f preview-control/preview/stage1-experience-state-study-bridge.js
+          test -f preview-control/preview/stage1-experience-state-source-patch.js
+          test -f preview-control/preview/stage1-experience-state.test.js
+          test -f preview-control/preview/stage1-patch.py
+          grep -Fq 'experience-state-stage1-v1' preview-control/preview/stage1-experience-state.js
+          grep -Fq 'ExperienceStateProvider' preview-control/preview/stage1-experience-state-react.jsx
+          grep -Fq 'publishExperienceStudySignal' preview-control/preview/stage1-experience-state-study-bridge.js
+          grep -Fq 'patchExperienceStateSource' preview-control/preview/stage1-experience-state-source-patch.js
+          ! grep -ERq '\bfetch[[:space:]]*\(' \
+            preview-control/preview/stage1-experience-state.js \
+            preview-control/preview/stage1-experience-state-react.jsx \
+            preview-control/preview/stage1-experience-state-study-bridge.js
+          ! grep -ERq 'MutationObserver|createPortal|UnifiedBottomSheet|@keyframes|preview-dark-ui|ia2-home|ia-home-primary' \
+            preview-control/preview/stage1-experience-state.js \
+            preview-control/preview/stage1-experience-state-react.jsx \
+            preview-control/preview/stage1-experience-state-study-bridge.js \
+            preview-control/preview/stage1-experience-state-source-patch.js
 
-      - name: Apply preview-only IA composition
+      - name: Apply Preview-only Stage 1 transform
         run: |
           set -euo pipefail
-          check_marker() {
-            local marker="$1"
-            local file="$2"
-            local label="$3"
-            if ! grep -Fq "$marker" "$file"; then
-              echo "::error::IA preview check failed: ${label}"
-              echo "Expected marker: ${marker}"
-              echo "File: ${file}"
-              exit 1
-            fi
-            echo "IA check passed: ${label}"
-          }
+          python3 preview-control/preview/stage1-patch.py production-source "$MAIN_BASELINE_SHA"
+          grep -Fq 'experience-state-stage1-v1' production-source/src/experience-state.js
+          grep -Fq 'ExperienceStateProvider' production-source/src/experience-state-react.jsx
+          grep -Fq 'publishExperienceStudySignal' production-source/src/experience-state-study-bridge.js
+          grep -Fq "import { patchExperienceStateSource } from './src/experience-state-source-patch.js'" production-source/vite.config.js
+          grep -Fq 'next = patchExperienceStateSource(next, cleanId)' production-source/vite.config.js
+          grep -Fq "base: '/school-preview/'" production-source/vite.config.js
+          grep -Fq 'experience-state-stage1-v1' production-source/index.html
+          ! grep -Fq 'preview-dark-ui.css' production-source/index.html
 
-          cat preview-control/preview/ia-redesign.css \
-              preview-control/preview/ia-layout-owner.css \
-              > production-source/public/preview-dark-ui.css
-          python3 preview-control/preview/figma-patch.py production-source "$MAIN_BASELINE_SHA"
+      - name: Test Stage 1 model and regression suite
+        working-directory: production-source
+        run: |
+          set -euo pipefail
+          npm test
+          node --test push-backend-v2/test/preview-isolation.test.js
 
-          check_marker 'S-Hub information architecture preview v2' production-source/public/preview-dark-ui.css 'preview CSS copied'
-          check_marker '.ia2-home-now' production-source/public/preview-dark-ui.css 'home hero CSS present'
-          check_marker '.ia2-class-hub' production-source/public/preview-dark-ui.css 'class hub CSS present'
-          check_marker '.ia2-schedule-hub' production-source/public/preview-dark-ui.css 'schedule hub CSS present'
-          check_marker '.ia2-ai-workspace' production-source/public/preview-dark-ui.css 'AI workspace CSS present'
-          check_marker 'patchIARedesignSource' production-source/src/ia-preview-patch.js 'IA source patch copied'
-          check_marker "import { patchIARedesignSource } from './src/ia-preview-patch.js'" production-source/vite.config.js 'IA Vite import wired'
-          check_marker 'next = patchIARedesignSource(next, cleanId)' production-source/vite.config.js 'IA final transform wired'
-
-      - name: Build preview
+      - name: Build Preview
         working-directory: production-source
         run: npm run build
 
-      - name: Verify isolated IA artifact
+      - name: Verify isolated Stage 1 artifact
         working-directory: production-source
         run: |
           set -euo pipefail
           grep -Fq 's-hub-preview-baseline' dist/index.html
-          grep -Fq 'ia-redesign-v2' dist/index.html
-          grep -Fq 'preview-dark-ui.css?v=17' dist/index.html
-          grep -Fq 'S-Hub information architecture preview v2' dist/preview-dark-ui.css
-          grep -Fq '.ia2-home-now' dist/preview-dark-ui.css
-          grep -Fq '.ia2-home-stream' dist/preview-dark-ui.css
-          grep -Fq '.ia2-class-hub' dist/preview-dark-ui.css
-          grep -Fq '.ia2-schedule-hub' dist/preview-dark-ui.css
-          grep -Fq '.ia2-study-page' dist/preview-dark-ui.css
-          grep -Fq '.ia2-ai-workspace' dist/preview-dark-ui.css
-          grep -Fq 'school-preview-shell-ia-redesign-v2' dist/sw.js
+          grep -Fq 'experience-state-stage1-v1' dist/index.html
+          ! grep -Fq 'preview-dark-ui.css' dist/index.html
+          test ! -e dist/preview-dark-ui.css
+          grep -Fq 'school-preview-shell-experience-stage1-v1' dist/sw.js
+          grep -Fq 'school-preview-notification-profile-experience-stage1-v1' dist/sw.js
           grep -Fq "key.startsWith('school-preview-')" dist/sw.js
-          grep -Fq "'./preview-dark-ui.css'" dist/sw.js
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
-          grep -Fq 'ia2-home-canvas' "$bundle"
-          grep -Fq 'ia2-home-now' "$bundle"
-          grep -Fq 'ia2-class-hub' "$bundle"
-          grep -Fq 'ia2-schedule-hub' "$bundle"
-          grep -Fq 'ia2-ai-workspace' "$bundle"
-          grep -Fq 'ia2-study-page' "$bundle"
-          grep -Fq '한 반의 흐름으로 이어집니다.' "$bundle"
-          grep -Fq '이번 주의 필요한 정보를 한 자리에서 넘겨 봐요.' "$bundle"
-          grep -Fq 'preview-study-record-sheet' "$bundle"
+          grep -Fq 'experience-state-stage1-v1' "$bundle"
+          grep -Fq 'study-active' "$bundle"
+          grep -Fq 'urgent-reminder' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
           grep -Fq 'preview|' "$bundle"
           grep -Fq 'school.preview.studentProfile.v1' "$bundle"
+          ! grep -Eq 'ia2-home-canvas|ia2-class-hub|ia2-schedule-hub|ia2-ai-workspace' "$bundle"
+          node scripts/verify-preview-isolation.mjs dist
 
       - name: Verify school main did not advance during build
         working-directory: production-source
@@ -151,23 +142,19 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Smoke test deployed IA preview
+      - name: Smoke test deployed Stage 1 Preview
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           set -euo pipefail
           for attempt in $(seq 1 45); do
             h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            c="$(curl -fsSL "${PAGE_URL}preview-dark-ui.css?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if grep -Fq 'ia-redesign-v2' <<< "$h" \
-              && grep -Fq 'preview-dark-ui.css?v=17' <<< "$h" \
-              && grep -Fq 'S-Hub information architecture preview v2' <<< "$c" \
-              && grep -Fq '.ia2-home-now' <<< "$c" \
-              && grep -Fq '.ia2-class-hub' <<< "$c" \
-              && grep -Fq '.ia2-schedule-hub' <<< "$c" \
-              && grep -Fq 'school-preview-shell-ia-redesign-v2' <<< "$s"; then
-              echo "IA v2 preview smoke test passed: ${PAGE_URL}"
+            if grep -Fq 'experience-state-stage1-v1' <<< "$h" \
+              && ! grep -Fq 'preview-dark-ui.css' <<< "$h" \
+              && grep -Fq 'school-preview-shell-experience-stage1-v1' <<< "$s" \
+              && grep -Fq "key.startsWith('school-preview-')" <<< "$s"; then
+              echo "Stage 1 Preview smoke test passed: ${PAGE_URL}"
               exit 0
             fi
             sleep 4
