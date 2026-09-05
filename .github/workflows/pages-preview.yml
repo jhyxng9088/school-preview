@@ -52,9 +52,11 @@ jobs:
           cat preview-control/preview/quiet-spatial.css \
               preview-control/preview/figma-quiet-overrides.css \
               preview-control/preview/showcase-overrides.css \
+              preview-control/preview/showcase-theme.css \
               > production-source/public/preview-dark-ui.css
           python3 preview-control/preview/figma-patch.py production-source "$MAIN_BASELINE_SHA"
           grep -Fq 'S-Hub tactile layered showcase v1' production-source/public/preview-dark-ui.css
+          grep -Fq 'S-Hub tactile showcase theme tokens' production-source/public/preview-dark-ui.css
           grep -Fq '.preview-showcase-hero' production-source/public/preview-dark-ui.css
           grep -Fq '.preview-study-control-card:has(.preview-study-action-dock.is-active)' production-source/public/preview-dark-ui.css
           grep -Fq 'patchFigmaQuietPreviewSource' production-source/src/figma-quiet-preview-patch.js
@@ -73,6 +75,7 @@ jobs:
           grep -Fq 'tactile-showcase-v1' dist/index.html
           grep -Fq 'preview-dark-ui.css?v=15' dist/index.html
           grep -Fq 'S-Hub tactile layered showcase v1' dist/preview-dark-ui.css
+          grep -Fq 'S-Hub tactile showcase theme tokens' dist/preview-dark-ui.css
           grep -Fq '.preview-showcase-hero' dist/preview-dark-ui.css
           grep -Fq '.preview-board-card' dist/preview-dark-ui.css
           grep -Fq '.s-hub-ai-page-mark' dist/preview-dark-ui.css
@@ -129,6 +132,7 @@ jobs:
             if printf '%s' "$h" | grep -Fq 'tactile-showcase-v1' \
               && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=15' \
               && printf '%s' "$c" | grep -Fq 'S-Hub tactile layered showcase v1' \
+              && printf '%s' "$c" | grep -Fq 'S-Hub tactile showcase theme tokens' \
               && printf '%s' "$c" | grep -Fq '.preview-showcase-hero' \
               && printf '%s' "$s" | grep -Fq 'school-preview-shell-tactile-showcase-v1'; then
               echo "Tactile showcase preview smoke test passed: ${PAGE_URL}"
