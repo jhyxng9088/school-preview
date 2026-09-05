@@ -129,12 +129,12 @@ jobs:
             h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             c="$(curl -fsSL "${PAGE_URL}preview-dark-ui.css?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if printf '%s' "$h" | grep -Fq 'tactile-showcase-v1' \
-              && printf '%s' "$h" | grep -Fq 'preview-dark-ui.css?v=15' \
-              && printf '%s' "$c" | grep -Fq 'S-Hub tactile layered showcase v1' \
-              && printf '%s' "$c" | grep -Fq 'S-Hub tactile showcase theme tokens' \
-              && printf '%s' "$c" | grep -Fq '.preview-showcase-hero' \
-              && printf '%s' "$s" | grep -Fq 'school-preview-shell-tactile-showcase-v1'; then
+            if grep -Fq 'tactile-showcase-v1' <<< "$h" \
+              && grep -Fq 'preview-dark-ui.css?v=15' <<< "$h" \
+              && grep -Fq 'S-Hub tactile layered showcase v1' <<< "$c" \
+              && grep -Fq 'S-Hub tactile showcase theme tokens' <<< "$c" \
+              && grep -Fq '.preview-showcase-hero' <<< "$c" \
+              && grep -Fq 'school-preview-shell-tactile-showcase-v1' <<< "$s"; then
               echo "Tactile showcase preview smoke test passed: ${PAGE_URL}"
               exit 0
             fi
