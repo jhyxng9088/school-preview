@@ -50,12 +50,13 @@ test('Stage 4 identifies Study as an action station while keeping live and ranki
   assert.equal((next.match(/data-role-surface="collection"/g) || []).length, 2)
 })
 
-test('Stage 4 identifies the AI page as a workspace instead of another generic card', () => {
-  const source = `return (\n  <section className="s-hub-ai-page" aria-label="S-Hub AI">\n    <header className="s-hub-ai-page-hero">AI</header>\n  </section>\n)`
+test('Stage 4 tags the already transformed AI hero as the workspace owner', () => {
+  const source = `return (\n  <section className="s-hub-ai-page" aria-label="S-Hub AI">\n    <header className={'s-hub-ai-page-hero ' + (working ? 'is-working' : 'is-idle')}>AI</header>\n  </section>\n)`
   const next = patchStage4RoleSurfaceSource(source, '/src/s-hub-ai-sheet.jsx')
-  assert.match(next, /s-hub-ai-page role-station-page/)
+  assert.match(next, /s-hub-ai-page-hero role-surface-heading/)
   assert.match(next, /data-role-surface="workspace"/)
-  assert.match(next, /role-surface-heading/)
+  assert.match(next, /data-role-station="ai"/)
+  assert.doesNotMatch(next, /s-hub-ai-page role-station-page/)
 })
 
 test('Stage 4 surface grammar stays declarative and does not add animation owners', () => {
