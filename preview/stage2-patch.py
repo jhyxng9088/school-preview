@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 import sys
 
 if len(sys.argv) != 4:
@@ -62,3 +63,8 @@ if phase == 'isolate':
     if text.count(marker) != 1:
         raise SystemExit('Stage 1 preview layer marker changed before Stage 2')
     index.write_text(text.replace(marker, replacement, 1))
+
+stage3_patch = preview_dir / 'stage3-patch.py'
+if not stage3_patch.exists():
+    raise SystemExit('missing Stage 3 patch controller')
+subprocess.run([sys.executable, str(stage3_patch), str(root), baseline, phase], check=True)
