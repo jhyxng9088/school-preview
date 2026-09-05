@@ -31,16 +31,23 @@ def apply_overlay():
     # one data-neutral Experience State transform after the current final source owner.
     vite = root / 'vite.config.js'
     text = vite.read_text()
-    import_marker = "import { patchSharedIconOwnerSource } from './src/shared-icon-owner-patch.js'\n"
     experience_import = "import { patchExperienceStateSource } from './src/experience-state-source-patch.js'\n"
-    if text.count(import_marker) != 1:
-        raise SystemExit('Vite final owner import marker changed')
-    text = text.replace(import_marker, import_marker + experience_import, 1)
+    owner_candidates = [
+        ('patchSharedSegmentSpringOwnerSource', './src/shared-segment-spring-owner-patch.js'),
+        ('patchSharedIconOwnerSource', './src/shared-icon-owner-patch.js'),
+    ]
+    matches = []
+    for owner_name, owner_module in owner_candidates:
+        import_marker = f"import {{ {owner_name} }} from '{owner_module}'\n"
+        owner_marker = f"  next = {owner_name}(next, cleanId)\n  return next"
+        if text.count(import_marker) == 1 and text.count(owner_marker) == 1:
+            matches.append((import_marker, owner_marker, owner_name))
+    if len(matches) != 1:
+        raise SystemExit('Vite final owner marker changed')
 
-    owner_marker = "  next = patchSharedIconOwnerSource(next, cleanId)\n  return next"
-    owner_replacement = "  next = patchSharedIconOwnerSource(next, cleanId)\n  next = patchExperienceStateSource(next, cleanId)\n  return next"
-    if text.count(owner_marker) != 1:
-        raise SystemExit('Vite final owner chain marker changed')
+    import_marker, owner_marker, owner_name = matches[0]
+    text = text.replace(import_marker, import_marker + experience_import, 1)
+    owner_replacement = f"  next = {owner_name}(next, cleanId)\n  next = patchExperienceStateSource(next, cleanId)\n  return next"
     text = text.replace(owner_marker, owner_replacement, 1)
     vite.write_text(text)
 
