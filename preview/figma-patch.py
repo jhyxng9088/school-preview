@@ -9,7 +9,7 @@ baseline = sys.argv[2]
 preview_dir = Path(__file__).resolve().parent
 
 # Production Vite owns the canonical V2 transform chain. Append one preview-only final
-# transform so the Figma composition is applied after all production ownership migrations.
+# transform so the approved showcase composition is applied after production migrations.
 figma_patch = root / 'src/figma-quiet-preview-patch.js'
 figma_patch.write_text((preview_dir / 'figma-quiet-source-patch.js').read_text())
 
@@ -60,8 +60,8 @@ profile_line = "const NOTIFICATION_PROFILE_CACHE = 'school-notification-profile-
 cleanup = ".filter((key) => ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))"
 if not cache_line or profile_line not in text or cleanup not in text:
     raise SystemExit('Service worker markers changed')
-text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-figma-quiet-v1'", 1)
-text = text.replace(profile_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-figma-quiet-v1'", 1)
+text = text.replace(cache_line, "const CACHE_NAME = 'school-preview-shell-tactile-showcase-v1'", 1)
+text = text.replace(profile_line, "const NOTIFICATION_PROFILE_CACHE = 'school-preview-notification-profile-tactile-showcase-v1'", 1)
 text = text.replace(cleanup, ".filter((key) => key.startsWith('school-preview-') && ![CACHE_NAME, NOTIFICATION_PROFILE_CACHE].includes(key))", 1)
 app_shell = "const APP_SHELL = ["
 if text.count(app_shell) != 1:
@@ -76,7 +76,7 @@ if text.count('</head>') != 1:
     raise SystemExit('index head marker changed')
 inject = (
     f'<meta name="s-hub-preview-baseline" content="{baseline}" />'
-    '<meta name="s-hub-preview-layer" content="figma-quiet-v1" />'
-    '<link rel="stylesheet" href="./preview-dark-ui.css?v=14" />'
+    '<meta name="s-hub-preview-layer" content="tactile-showcase-v1" />'
+    '<link rel="stylesheet" href="./preview-dark-ui.css?v=15" />'
 )
 index.write_text(text.replace('</head>', inject + '</head>', 1))
