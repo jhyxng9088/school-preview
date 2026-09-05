@@ -1,0 +1,27 @@
+/* S-Hub tactile showcase theme tokens. Preview only. */
+:root {
+  --bg: #07090d;
+  --background: #07090d;
+  --surface: #101522;
+  --surface-solid: #101522;
+  --surface-soft: #0c111b;
+  --surface-strong: #182136;
+  --text: #f7f9ff;
+  --text-secondary: #a7b0c0;
+  --text-tertiary: #737e91;
+  --border: rgba(255,255,255,.085);
+  --divider: rgba(255,255,255,.075);
+  --accent: #5b82ff;
+  --accent-2: #8b7cff;
+  --accent-soft: rgba(91,130,255,.17);
+  --accent-faint: rgba(91,130,255,.09);
+  --success-soft: rgba(99,211,143,.13);
+  --warm-soft: rgba(248,180,74,.13);
+  --danger-soft: rgba(231,99,116,.13);
+  --showcase-panel: linear-gradient(160deg, rgba(23,31,49,.96), rgba(12,17,27,.98));
+  --showcase-panel-soft: linear-gradient(160deg, rgba(20,27,43,.92), rgba(11,15,24,.96));
+  --showcase-blue-panel: radial-gradient(circle at 88% 8%, rgba(109,124,255,.32), transparent 30%), linear-gradient(145deg, #17233a 0%, #111a2a 62%, #0c121d 100%);
+  --showcase-shadow: 0 18px 50px rgba(0,0,0,.30), 0 1px 0 rgba(255,255,255,.025) inset;
+  --showcase-shadow-soft: 0 10px 30px rgba(0,0,0,.22);
+  --nav-shadow: 0 18px 48px rgba(0,0,0,.52), 0 1px 0 rgba(255,255,255,.05) inset;
+}
