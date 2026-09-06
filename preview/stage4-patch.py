@@ -55,10 +55,13 @@ if phase == 'isolate':
     text = sw.read_text()
     marker = "const PREVIEW_LIVE_HOME_LAYER = 'live-home-stage3-v3'"
     stage4_marker = "const PREVIEW_ROLE_SURFACE_LAYER = 'role-surface-stage4-v1'"
+    revision_marker = "const PREVIEW_ROLE_SURFACE_REVISION = 'stage4-visual-v2'"
     if text.count(marker) != 1:
         raise SystemExit('Stage 3 service worker marker changed before Stage 4')
     if stage4_marker not in text:
         text = text.replace(marker, marker + "\n" + stage4_marker, 1)
+    if revision_marker not in text:
+        text = text.replace(stage4_marker, stage4_marker + "\n" + revision_marker, 1)
     sw.write_text(text)
 
     index = root / 'index.html'
@@ -67,6 +70,7 @@ if phase == 'isolate':
     replacement = (
         '<meta name="s-hub-preview-live-home" content="live-home-stage3-v3" />'
         '<meta name="s-hub-preview-layer" content="role-surface-stage4-v1" />'
+        '<meta name="s-hub-preview-visual" content="stage4-visual-v2" />'
     )
     if text.count(marker) != 1:
         raise SystemExit('Stage 3 preview layer marker changed before Stage 4')
@@ -74,6 +78,7 @@ if phase == 'isolate':
 
     smoke = {
         'version': 'role-surface-stage4-v1',
+        'visualRevision': 'stage4-visual-v2',
         'baseline': baseline,
         'stations': {
             'home': 'status',
@@ -82,6 +87,7 @@ if phase == 'isolate':
             'study': 'action',
             'ai': 'workspace',
         },
+        'visual': ['class-masthead', 'schedule-masthead', 'study-split-layout', 'ai-workspace-plane'],
         'principle': 'same-role-same-surface',
     }
     (root / 'public/stage4-smoke.json').write_text(json.dumps(smoke, ensure_ascii=False, indent=2) + '\n')

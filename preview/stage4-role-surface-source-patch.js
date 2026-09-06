@@ -1,4 +1,5 @@
 export const ROLE_SURFACE_PATCH_VERSION = 'role-surface-stage4-v1'
+export const ROLE_SURFACE_VISUAL_REVISION = 'stage4-visual-v2'
 
 function replaceExact(source, marker, replacement, label) {
   const text = String(source || '')
@@ -13,7 +14,7 @@ function patchExperienceSurface(source) {
   next = replaceExact(
     next,
     '      className="experience-surface"\n      data-experience-primary={model.primary}',
-    '      className="experience-surface"\n      data-role-surface="status"\n      data-role-surface-version="role-surface-stage4-v1"\n      data-role-station="home"\n      data-experience-primary={model.primary}',
+    '      className="experience-surface"\n      data-role-surface="status"\n      data-role-surface-version="role-surface-stage4-v1"\n      data-role-visual="stage4-visual-v2"\n      data-role-station="home"\n      data-experience-primary={model.primary}',
     'home status surface',
   )
   return next
@@ -35,11 +36,15 @@ function patchStage3Flow(source) {
     next = replaceExact(
       next,
       '      className="stage3-action-focus"\n      data-stage3-action-tone={model.tone}',
-      '      className="stage3-action-focus"\n      data-role-surface="action"\n      data-role-surface-version="role-surface-stage4-v1"\n      data-role-station="home"\n      data-stage3-action-tone={model.tone}',
+      '      className="stage3-action-focus"\n      data-role-surface="action"\n      data-role-surface-version="role-surface-stage4-v1"\n      data-role-visual="stage4-visual-v2"\n      data-role-station="home"\n      data-stage3-action-tone={model.tone}',
       'home action surface',
     )
   }
   return next
+}
+
+function stationMasthead({ kicker, title, detail, live = false }) {
+  return `      <header className="role-station-masthead" data-role-visual="stage4-visual-v2">\n        <div className="role-station-masthead-copy">\n          <p>${kicker}</p>\n          <h1>${title}</h1>\n          <span>${detail}</span>\n        </div>\n        ${live ? '<span className="role-station-live"><i aria-hidden="true" />LIVE</span>' : '<span className="role-station-index" aria-hidden="true">S-Hub</span>'}\n      </header>\n`
 }
 
 function patchMainSource(source) {
@@ -49,7 +54,7 @@ function patchMainSource(source) {
     next = replaceExact(
       next,
       '<section className="class-station-page">',
-      '<section className="class-station-page role-station-page" data-role-station="class" data-role-surface-version="role-surface-stage4-v1">',
+      `<section className="class-station-page role-station-page" data-role-station="class" data-role-surface-version="role-surface-stage4-v1">\n${stationMasthead({ kicker: '우리 반', title: '함께 보는 공간', detail: '시간표와 게시판을 한 흐름에서 확인해요.', live: true }).trimEnd()}`,
       'class station owner',
     )
   }
@@ -58,7 +63,7 @@ function patchMainSource(source) {
     next = replaceExact(
       next,
       'className="class-top-segment" role="group" aria-label="우리 반 메뉴"',
-      'className="class-top-segment" data-role-surface="navigation" data-role-surface-version="role-surface-stage4-v1" data-role-station="class" role="group" aria-label="우리 반 메뉴"',
+      'className="class-top-segment" data-role-surface="navigation" data-role-surface-version="role-surface-stage4-v1" data-role-visual="stage4-visual-v2" data-role-station="class" role="group" aria-label="우리 반 메뉴"',
       'class navigation surface',
     )
   }
@@ -67,7 +72,7 @@ function patchMainSource(source) {
     next = replaceExact(
       next,
       '<section className="station-schedule-page">',
-      '<section className="station-schedule-page role-station-page" data-role-station="schedule" data-role-surface-version="role-surface-stage4-v1">',
+      `<section className="station-schedule-page role-station-page" data-role-station="schedule" data-role-surface-version="role-surface-stage4-v1">\n${stationMasthead({ kicker: '일정', title: '오늘과 앞으로의 흐름', detail: '리마인더, 학사일정, 급식을 같은 자리에서 확인해요.' }).trimEnd()}`,
       'schedule station owner',
     )
   }
@@ -76,7 +81,7 @@ function patchMainSource(source) {
     next = replaceExact(
       next,
       'className="class-top-segment schedule-top-segment" role="group" aria-label="일정 세부 메뉴"',
-      'className="class-top-segment schedule-top-segment" data-role-surface="navigation" data-role-surface-version="role-surface-stage4-v1" data-role-station="schedule" role="group" aria-label="일정 세부 메뉴"',
+      'className="class-top-segment schedule-top-segment" data-role-surface="navigation" data-role-surface-version="role-surface-stage4-v1" data-role-visual="stage4-visual-v2" data-role-station="schedule" role="group" aria-label="일정 세부 메뉴"',
       'schedule navigation surface',
     )
   }
@@ -91,7 +96,7 @@ function patchStudySource(source) {
     next = replaceExact(
       next,
       '<section className="preview-study-page">',
-      '<section className="preview-study-page role-station-page" data-role-station="study" data-role-surface-version="role-surface-stage4-v1">',
+      '<section className="preview-study-page role-station-page" data-role-station="study" data-role-surface-version="role-surface-stage4-v1" data-role-visual="stage4-visual-v2">',
       'study station owner',
     )
   }
@@ -134,14 +139,24 @@ function patchStudySource(source) {
 
 function patchAISource(source) {
   let next = String(source || '')
-  if (next.includes('data-role-surface="workspace"')) return next
 
-  next = replaceExact(
-    next,
-    "<header className={'s-hub-ai-page-hero ' + (working ? 'is-working' : 'is-idle')}>",
-    "<header className={'s-hub-ai-page-hero role-surface-heading ' + (working ? 'is-working' : 'is-idle')} data-role-surface=\"workspace\" data-role-surface-version=\"role-surface-stage4-v1\" data-role-station=\"ai\">",
-    'AI transformed workspace owner',
-  )
+  if (!next.includes('s-hub-ai-page role-station-page')) {
+    next = replaceExact(
+      next,
+      '<section className="s-hub-ai-page" aria-label="S-Hub AI">',
+      '<section className="s-hub-ai-page role-station-page" data-role-station="ai" data-role-surface-version="role-surface-stage4-v1" data-role-visual="stage4-visual-v2" aria-label="S-Hub AI">',
+      'AI page workspace owner',
+    )
+  }
+
+  if (!next.includes('data-role-surface="workspace"')) {
+    next = replaceExact(
+      next,
+      "<header className={'s-hub-ai-page-hero ' + (working ? 'is-working' : 'is-idle')}>",
+      "<header className={'s-hub-ai-page-hero role-surface-heading ' + (working ? 'is-working' : 'is-idle')} data-role-surface=\"workspace\" data-role-surface-version=\"role-surface-stage4-v1\" data-role-station=\"ai\">",
+      'AI transformed workspace owner',
+    )
+  }
 
   return next
 }
