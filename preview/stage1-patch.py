@@ -1,6 +1,8 @@
 from pathlib import Path
 import sys
 
+from experience_owner_overlay import apply_experience_owner
+
 if len(sys.argv) not in {3, 4}:
     raise SystemExit('usage: stage1-patch.py <production-source> <main-sha> [all|overlay|isolate]')
 
@@ -18,7 +20,6 @@ def apply_overlay():
         'stage1-experience-state.js': root / 'src/experience-state.js',
         'stage1-experience-state-study-bridge.js': root / 'src/experience-state-study-bridge.js',
         'stage1-experience-state-react.jsx': root / 'src/experience-state-react.jsx',
-        'stage1-experience-state-source-patch.js': root / 'src/experience-state-source-patch.js',
         'stage1-experience-state.test.js': root / 'tests/experience-state-stage1.test.js',
     }
     for source_name, target in copies.items():
@@ -27,29 +28,18 @@ def apply_overlay():
             raise SystemExit(f'missing Stage 1 control file: {source_name}')
         target.write_text(source.read_text())
 
-    # Production Vite remains the canonical owner for existing behavior. Stage 1 appends
-    # one data-neutral Experience State transform after the current final source owner.
-    vite = root / 'vite.config.js'
-    text = vite.read_text()
-    experience_import = "import { patchExperienceStateSource } from './src/experience-state-source-patch.js'\n"
-    owner_candidates = [
-        ('patchSharedSegmentSpringOwnerSource', './src/shared-segment-spring-owner-patch.js'),
-        ('patchSharedIconOwnerSource', './src/shared-icon-owner-patch.js'),
-    ]
-    matches = []
-    for owner_name, owner_module in owner_candidates:
-        import_marker = f"import {{ {owner_name} }} from '{owner_module}'\n"
-        owner_marker = f"  next = {owner_name}(next, cleanId)\n  return next"
-        if text.count(import_marker) == 1 and text.count(owner_marker) == 1:
-            matches.append((import_marker, owner_marker, owner_name))
-    if len(matches) != 1:
-        raise SystemExit('Vite final owner marker changed')
+    # The Preview model remains separate, but its build transform now reuses the
+    # already-grandfathered final Production owner module instead of adding a new
+    # src/*-patch.js owner.
+    test_path = root / 'tests/experience-state-stage1.test.js'
+    test_text = test_path.read_text()
+    old_owner_path = "'src/experience-state-source-patch.js',"
+    new_owner_path = "'src/shared-segment-spring-owner-patch.js',"
+    if test_text.count(old_owner_path) != 1:
+        raise SystemExit('Stage 1 owner-neutrality test marker changed')
+    test_path.write_text(test_text.replace(old_owner_path, new_owner_path, 1))
 
-    import_marker, owner_marker, owner_name = matches[0]
-    text = text.replace(import_marker, import_marker + experience_import, 1)
-    owner_replacement = f"  next = {owner_name}(next, cleanId)\n  next = patchExperienceStateSource(next, cleanId)\n  return next"
-    text = text.replace(owner_marker, owner_replacement, 1)
-    vite.write_text(text)
+    apply_experience_owner(root, preview_dir, 1)
 
 
 def apply_isolation():

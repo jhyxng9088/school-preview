@@ -2,6 +2,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from experience_owner_overlay import apply_experience_owner
+
 if len(sys.argv) != 4:
     raise SystemExit('usage: stage2-patch.py <production-source> <main-sha> <overlay|isolate>')
 
@@ -18,7 +20,6 @@ if phase == 'overlay':
         'stage2-experience-surface-model.js': root / 'src/experience-surface-model.js',
         'stage2-experience-surface.jsx': root / 'src/experience-surface.jsx',
         'stage2-experience-surface.css': root / 'src/experience-surface.css',
-        'stage2-experience-surface-source-patch.js': root / 'src/experience-surface-source-patch.js',
         'stage2-experience-surface.test.js': root / 'tests/experience-surface-stage2.test.js',
     }
     for source_name, target in copies.items():
@@ -27,20 +28,7 @@ if phase == 'overlay':
             raise SystemExit(f'missing Stage 2 control file: {source_name}')
         target.write_text(source.read_text())
 
-    vite = root / 'vite.config.js'
-    text = vite.read_text()
-    import_marker = "import { patchExperienceStateSource } from './src/experience-state-source-patch.js'\n"
-    surface_import = "import { patchExperienceSurfaceSource } from './src/experience-surface-source-patch.js'\n"
-    owner_marker = "  next = patchExperienceStateSource(next, cleanId)\n  return next"
-    if text.count(import_marker) != 1 or text.count(owner_marker) != 1:
-        raise SystemExit('Stage 1 final owner marker changed before Stage 2')
-    text = text.replace(import_marker, import_marker + surface_import, 1)
-    text = text.replace(
-        owner_marker,
-        "  next = patchExperienceStateSource(next, cleanId)\n  next = patchExperienceSurfaceSource(next, cleanId)\n  return next",
-        1,
-    )
-    vite.write_text(text)
+    apply_experience_owner(root, preview_dir, 2)
 
 if phase == 'isolate':
     sw = root / 'public/sw.js'

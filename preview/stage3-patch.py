@@ -2,6 +2,8 @@ from pathlib import Path
 import json
 import sys
 
+from experience_owner_overlay import apply_experience_owner
+
 if len(sys.argv) != 4:
     raise SystemExit('usage: stage3-patch.py <production-source> <main-sha> <overlay|isolate>')
 
@@ -18,7 +20,6 @@ if phase == 'overlay':
         'stage3-home-flow-model.js': root / 'src/stage3-home-flow-model.js',
         'stage3-home-flow.jsx': root / 'src/stage3-home-flow.jsx',
         'stage3-home-flow.css': root / 'src/stage3-home-flow.css',
-        'stage3-home-source-patch.js': root / 'src/stage3-home-source-patch.js',
         'stage3-home-flow.test.js': root / 'tests/stage3-home-flow.test.js',
     }
     for source_name, target in copies.items():
@@ -27,27 +28,17 @@ if phase == 'overlay':
             raise SystemExit(f'missing Stage 3 control file: {source_name}')
         target.write_text(source.read_text())
 
-    vite = root / 'vite.config.js'
-    text = vite.read_text()
-    import_marker = "import { patchExperienceSurfaceSource } from './src/experience-surface-source-patch.js'\n"
-    stage3_import = "import { patchStage3HomeSource } from './src/stage3-home-source-patch.js'\n"
-    owner_marker = (
-        "  next = patchExperienceStateSource(next, cleanId)\n"
-        "  next = patchExperienceSurfaceSource(next, cleanId)\n"
-        "  return next"
-    )
-    if text.count(import_marker) != 1 or text.count(owner_marker) != 1:
-        raise SystemExit('Stage 2 final owner marker changed before Stage 3')
-    text = text.replace(import_marker, import_marker + stage3_import, 1)
-    text = text.replace(
-        owner_marker,
-        "  next = patchExperienceStateSource(next, cleanId)\n"
-        "  next = patchExperienceSurfaceSource(next, cleanId)\n"
-        "  next = patchStage3HomeSource(next, cleanId)\n"
-        "  return next",
-        1,
-    )
-    vite.write_text(text)
+    # Keep the Stage 3 patch unit fixtures, but import the phase from the single
+    # grandfathered owner module used by the real Preview build.
+    test_path = root / 'tests/stage3-home-flow.test.js'
+    test_text = test_path.read_text()
+    old_import = "from '../src/stage3-home-source-patch.js'"
+    new_import = "from '../src/shared-segment-spring-owner-patch.js'"
+    if test_text.count(old_import) != 1:
+        raise SystemExit('Stage 3 patch test import marker changed')
+    test_path.write_text(test_text.replace(old_import, new_import, 1))
+
+    apply_experience_owner(root, preview_dir, 3)
 
 if phase == 'isolate':
     sw = root / 'public/sw.js'
