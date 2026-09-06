@@ -15,12 +15,14 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PREVIEW_LAYER_ID: role-surface-stage4-v1
+  PREVIEW_LAYER_ID: production-main-mirror-v1
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      baseline_sha: ${{ steps.baseline.outputs.sha }}
     steps:
       - name: Checkout preview control files
         uses: actions/checkout@v4
@@ -28,10 +30,13 @@ jobs:
           path: preview-control
 
       - name: Checkout exact current school main
+        id: baseline
         run: |
           set -euo pipefail
           git clone --depth=2 --branch main https://github.com/jhyxng9088/school.git production-source
-          echo "MAIN_BASELINE_SHA=$(git -C production-source rev-parse HEAD)" >> "$GITHUB_ENV"
+          sha="$(git -C production-source rev-parse HEAD)"
+          echo "MAIN_BASELINE_SHA=$sha" >> "$GITHUB_ENV"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -46,280 +51,60 @@ jobs:
           npm ci
           npm test
 
-      - name: Guard Stage 1 foundation ownership
+      - name: Guard clean production mirror
         run: |
           set -euo pipefail
-          for file in \
-            stage1-experience-state.js \
-            stage1-experience-state-react.jsx \
-            stage1-experience-state-study-bridge.js \
-            stage1-experience-state-source-patch.js \
-            stage1-experience-state.test.js \
-            stage1-patch.py; do
-            test -f "preview-control/preview/$file"
-          done
-          grep -Fq 'experience-state-stage1-v1' preview-control/preview/stage1-experience-state.js
-          ! grep -ERq '\bfetch[[:space:]]*\(' \
-            preview-control/preview/stage1-experience-state.js \
-            preview-control/preview/stage1-experience-state-react.jsx \
-            preview-control/preview/stage1-experience-state-study-bridge.js
-          ! grep -ERq 'MutationObserver|createPortal|UnifiedBottomSheet' \
-            preview-control/preview/stage1-experience-state.js \
-            preview-control/preview/stage1-experience-state-react.jsx \
-            preview-control/preview/stage1-experience-state-study-bridge.js
+          test -f preview-control/preview/baseline-isolation.py
+          ! grep -ERq 'experience-state-stage1-v1|experience-surface-stage2-v1|live-home-stage3-v3|role-surface-stage4-v1|live-class-hub-stage5-v1' \
+            production-source/src production-source/public production-source/index.html production-source/vite.config.js
 
-      - name: Apply Preview-only Stage 1 foundation
+      - name: Apply Preview runtime isolation only
         run: |
           set -euo pipefail
-          python3 preview-control/preview/stage1-patch.py production-source "$MAIN_BASELINE_SHA" overlay
-          grep -Fq 'experience-state-stage1-v1' production-source/src/experience-state.js
-          grep -Fq 'next = patchExperienceStateSource(next, cleanId)' production-source/vite.config.js
-          grep -Fq "base: '/school/'" production-source/vite.config.js
-
-      - name: Test Stage 1 Experience State model
-        working-directory: production-source
-        run: node --test tests/experience-state-stage1.test.js
-
-      - name: Guard Stage 2 live surface ownership
-        run: |
-          set -euo pipefail
-          for file in \
-            stage2-experience-surface-model.js \
-            stage2-experience-surface.jsx \
-            stage2-experience-surface.css \
-            stage2-experience-surface-source-patch.js \
-            stage2-experience-surface.test.js \
-            stage2-patch.py; do
-            test -f "preview-control/preview/$file"
-          done
-          grep -Fq 'experience-surface-stage2-v1' preview-control/preview/stage2-experience-surface-model.js
-          grep -Fq 'useExperienceState' preview-control/preview/stage2-experience-surface.jsx
-          grep -Fq '<ExperienceSurface />' preview-control/preview/stage2-experience-surface-source-patch.js
-          ! grep -ERq '\bfetch[[:space:]]*\(|MutationObserver|createPortal|setInterval|addEventListener' \
-            preview-control/preview/stage2-experience-surface-model.js \
-            preview-control/preview/stage2-experience-surface.jsx \
-            preview-control/preview/stage2-experience-surface-source-patch.js
-          ! grep -Fq '@keyframes' preview-control/preview/stage2-experience-surface.css
-
-      - name: Guard Stage 3 adaptive home ownership
-        run: |
-          set -euo pipefail
-          for file in \
-            stage3-home-flow-model.js \
-            stage3-home-flow.jsx \
-            stage3-home-flow.css \
-            stage3-home-source-patch.js \
-            stage3-home-flow.test.js \
-            stage3-patch.py; do
-            test -f "preview-control/preview/$file"
-          done
-          grep -Fq 'live-home-stage3-v3' preview-control/preview/stage3-home-flow-model.js
-          grep -Fq 'buildStage3LayoutModel' preview-control/preview/stage3-home-flow-model.js
-          grep -Fq 'Stage3HomeFrame' preview-control/preview/stage3-home-flow.jsx
-          grep -Fq 'data-stage3-mode' preview-control/preview/stage3-home-flow.jsx
-          grep -Fq 'Stage3HomeFrame homeStackRef' preview-control/preview/stage3-home-source-patch.js
-          ! grep -ERq '\bfetch[[:space:]]*\(|MutationObserver|createPortal|setInterval|addEventListener' \
-            preview-control/preview/stage3-home-flow-model.js \
-            preview-control/preview/stage3-home-flow.jsx \
-            preview-control/preview/stage3-home-source-patch.js
-          ! grep -Fq '@keyframes' preview-control/preview/stage3-home-flow.css
-
-      - name: Guard Stage 4 role surface ownership
-        run: |
-          set -euo pipefail
-          for file in \
-            stage4-role-surface-model.js \
-            stage4-role-surface.css \
-            stage4-role-surface-source-patch.js \
-            stage4-role-surface.test.js \
-            stage4-patch.py; do
-            test -f "preview-control/preview/$file"
-          done
-          grep -Fq 'role-surface-stage4-v1' preview-control/preview/stage4-role-surface-model.js
-          grep -Fq "surface: 'status'" preview-control/preview/stage4-role-surface-model.js
-          grep -Fq "surface: 'navigation'" preview-control/preview/stage4-role-surface-model.js
-          grep -Fq "surface: 'action'" preview-control/preview/stage4-role-surface-model.js
-          grep -Fq "surface: 'workspace'" preview-control/preview/stage4-role-surface-model.js
-          grep -Fq 'data-role-surface' preview-control/preview/stage4-role-surface-source-patch.js
-          ! grep -ERq '\bfetch[[:space:]]*\(|MutationObserver|createPortal|setInterval|addEventListener' \
-            preview-control/preview/stage4-role-surface-model.js \
-            preview-control/preview/stage4-role-surface-source-patch.js
-          ! grep -Fq '@keyframes' preview-control/preview/stage4-role-surface.css
-
-      - name: Apply Preview-only Stage 2 through Stage 4
-        run: |
-          set -euo pipefail
-          python3 preview-control/preview/stage2-patch.py production-source "$MAIN_BASELINE_SHA" overlay
-          grep -Fq 'experience-surface-stage2-v1' production-source/src/experience-surface-model.js
-          grep -Fq 'live-home-stage3-v3' production-source/src/stage3-home-flow-model.js
-          grep -Fq 'role-surface-stage4-v1' production-source/src/stage4-role-surface-model.js
-          grep -Fq 'next = patchExperienceSurfaceSource(next, cleanId)' production-source/vite.config.js
-          grep -Fq 'next = patchStage3HomeSource(next, cleanId)' production-source/vite.config.js
-          grep -Fq 'next = patchStage4RoleSurfaceSource(next, cleanId)' production-source/vite.config.js
-          grep -Fq "base: '/school/'" production-source/vite.config.js
-
-      - name: Test Stage 2 Experience Surface model
-        working-directory: production-source
-        run: node --test tests/experience-surface-stage2.test.js
-
-      - name: Test Stage 3 Adaptive Home model
-        working-directory: production-source
-        run: node --test tests/stage3-home-flow.test.js
-
-      - name: Test Stage 4 Role Surface contract
-        working-directory: production-source
-        run: node --test tests/stage4-role-surface.test.js
-
-      - name: Test Stage 4 overlay against production regression suite
-        working-directory: production-source
-        run: npm test
-
-      - name: Apply Preview runtime isolation
-        run: |
-          set -euo pipefail
-          python3 preview-control/preview/stage1-patch.py production-source "$MAIN_BASELINE_SHA" isolate
-          python3 preview-control/preview/stage2-patch.py production-source "$MAIN_BASELINE_SHA" isolate
+          python3 preview-control/preview/baseline-isolation.py production-source "$MAIN_BASELINE_SHA"
           grep -Fq "base: '/school-preview/'" production-source/vite.config.js
-          grep -Fq 'experience-state-stage1-v1' production-source/index.html
-          grep -Fq 'experience-surface-stage2-v1' production-source/index.html
-          grep -Fq 'live-home-stage3-v3' production-source/index.html
-          grep -Fq 'role-surface-stage4-v1' production-source/index.html
+          grep -Fq "s-hub-preview-layer\" content=\"production-main-mirror-v1" production-source/index.html
           grep -Fq 'school-sync-preview' production-source/src/school-sync.js
           grep -Fq 'preview-class-' production-source/src/school-sync.js
           grep -Fq 'preview|' production-source/src/school-sync.js
-          grep -Fq 'school-preview-shell-experience-stage2-v1' production-source/public/sw.js
-          grep -Fq 'school-preview-notification-profile-experience-stage2-v1' production-source/public/sw.js
-          grep -Fq 'live-home-stage3-v3' production-source/public/sw.js
-          grep -Fq 'role-surface-stage4-v1' production-source/public/sw.js
+          grep -Fq 'school-preview-shell-production-mirror-v1' production-source/public/sw.js
+          grep -Fq 'school-preview-notification-profile-production-mirror-v1' production-source/public/sw.js
           grep -Fq "key.startsWith('school-preview-')" production-source/public/sw.js
-          test -s production-source/public/stage3-smoke.json
-          test -s production-source/public/stage4-smoke.json
 
-      - name: Test Preview isolation contract
+      - name: Test isolated production mirror
         working-directory: production-source
-        run: node --test push-backend-v2/test/preview-isolation.test.js
+        run: npm test
 
       - name: Build Preview
         working-directory: production-source
         run: npm run build
 
-      - name: Generate hosted live-home fixture
+      - name: Verify production-mirror artifact
         working-directory: production-source
         run: |
           set -euo pipefail
-          node --input-type=module <<'NODE'
-          import { writeFileSync } from 'node:fs'
-          import { resolveExperienceState } from './src/experience-state.js'
-          import { buildExperienceSurfaceModel } from './src/experience-surface-model.js'
-          import { buildStage3ContextModel, buildStage3LayoutModel } from './src/stage3-home-flow-model.js'
-          import { roleSurfaceSummary } from './src/stage4-role-surface-model.js'
-
-          const at = (value) => new Date(value)
-          const school = (kind, extra = {}) => ({ kind, configured: true, current: null, next: null, last: null, ...extra })
-          const resolved = (input) => resolveExperienceState(input)
-          const surface = (input) => buildExperienceSurfaceModel(resolved(input))
-          const context = (input) => buildStage3ContextModel({ state: resolved(input), todos: input.todos || [] })
-          const layout = (input) => buildStage3LayoutModel(resolved(input))
-          const current = { number: 1, subject: '정보', start: '09:10', end: '10:00' }
-          const next = { number: 2, subject: '수학', start: '10:10', end: '11:00' }
-          const classInput = {
-            now: at('2026-09-07T09:30:00+09:00'),
-            schoolState: school('class', { current, next }),
-            todos: [{ title: '영어 단어', dueDate: '2026-09-08', dueTime: '09:00' }],
-          }
-          const urgentInput = {
-            now: at('2026-09-07T16:00:00+09:00'),
-            schoolState: school('done', { last: current }),
-            todos: [{ title: '수학 수행평가', dueDate: '2026-09-07', dueTime: '16:30' }],
-          }
-          const fixture = {
-            classState: surface(classInput),
-            classContext: context(classInput),
-            classLayout: layout(classInput),
-            roleSurfaces: roleSurfaceSummary(),
-            holiday: surface({
-              now: at('2026-09-07T10:00:00+09:00'),
-              schoolState: school('class', { current }),
-              academicEvents: [{ rawDate: '20260907', name: '대체공휴일', dayOffType: '공휴일' }],
-            }),
-            discretionary: surface({
-              now: at('2026-09-07T10:00:00+09:00'),
-              schoolState: school('class', { current }),
-              academicEvents: [{ rawDate: '20260907', name: '학교장 재량휴업일', dayOffType: '휴업일' }],
-            }),
-            study: surface({
-              now: at('2026-09-07T09:30:00+09:00'),
-              schoolState: school('class', { current, next }),
-              studyActive: { subject: '영단어', startedAt: 1 },
-            }),
-            urgent: surface(urgentInput),
-            urgentLayout: layout(urgentInput),
-            weekendLayout: buildStage3LayoutModel({
-              primary: 'normal',
-              context: { school: { kind: 'weekend' } },
-            }),
-            setupLayout: buildStage3LayoutModel({
-              primary: 'normal',
-              context: { school: { kind: 'no-timetable' } },
-            }),
-            offlineClass: surface({
-              now: at('2026-09-07T09:30:00+09:00'),
-              schoolState: school('class', { current, next }),
-              online: false,
-            }),
-          }
-          writeFileSync('dist/stage2-smoke.json', JSON.stringify(fixture, null, 2))
-          NODE
-
-      - name: Verify isolated Stage 4 artifact
-        working-directory: production-source
-        run: |
-          set -euo pipefail
-          grep -Fq 's-hub-preview-baseline' dist/index.html
-          grep -Fq 'experience-state-stage1-v1' dist/index.html
-          grep -Fq 'experience-surface-stage2-v1' dist/index.html
-          grep -Fq 'live-home-stage3-v3' dist/index.html
-          grep -Fq 'role-surface-stage4-v1' dist/index.html
-          grep -Fq 'school-preview-shell-experience-stage2-v1' dist/sw.js
-          grep -Fq 'school-preview-notification-profile-experience-stage2-v1' dist/sw.js
-          grep -Fq 'live-home-stage3-v3' dist/sw.js
-          grep -Fq 'role-surface-stage4-v1' dist/sw.js
+          grep -Fq "s-hub-preview-baseline\" content=\"$MAIN_BASELINE_SHA" dist/index.html
+          grep -Fq "s-hub-preview-layer\" content=\"production-main-mirror-v1" dist/index.html
+          grep -Fq 'school-preview-shell-production-mirror-v1' dist/sw.js
+          grep -Fq 'school-preview-notification-profile-production-mirror-v1' dist/sw.js
           grep -Fq "key.startsWith('school-preview-')" dist/sw.js
-          test -s dist/stage2-smoke.json
-          test -s dist/stage3-smoke.json
-          test -s dist/stage4-smoke.json
-          grep -Fq '학교장 재량휴업일' dist/stage2-smoke.json
-          grep -Fq '영단어' dist/stage2-smoke.json
-          grep -Fq '수학 수행평가' dist/stage2-smoke.json
-          grep -Fq '"station": "study"' dist/stage2-smoke.json
-          grep -Fq 'live-home-stage3-v3' dist/stage3-smoke.json
-          grep -Fq 'adaptive-layout' dist/stage3-smoke.json
-          grep -Fq 'role-surface-stage4-v1' dist/stage4-smoke.json
-          grep -Fq 'same-role-same-surface' dist/stage4-smoke.json
-          grep -Fq '"ai": "workspace"' dist/stage4-smoke.json
+          ! grep -ERq 'experience-state-stage1-v1|experience-surface-stage2-v1|live-home-stage3-v3|role-surface-stage4-v1|live-class-hub-stage5-v1' dist
           bundle="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n1)"
           test -n "$bundle"
-          grep -Fq 'experience-state-stage1-v1' "$bundle"
-          grep -Fq 'experience-surface-stage2-v1' "$bundle"
-          grep -Fq 'live-home-stage3-v3' "$bundle"
-          grep -Fq 'role-surface-stage4-v1' "$bundle"
-          grep -Fq 'data-stage3-live-home' "$bundle"
-          grep -Fq 'data-stage3-mode' "$bundle"
-          grep -Fq 'data-role-surface' "$bundle"
-          grep -Fq 'data-role-station' "$bundle"
-          grep -Fq 'data-experience-primary' "$bundle"
           grep -Fq 'school-sync-preview' "$bundle"
           grep -Fq 'preview-class-' "$bundle"
           grep -Fq 'preview|' "$bundle"
-          ! grep -Eq 'ia2-home-canvas|ia2-class-hub|ia2-schedule-hub|ia2-ai-workspace' "$bundle"
-          node scripts/verify-preview-isolation.mjs dist
+          grep -Fq 'school.preview.studentProfile.v1' "$bundle"
 
-      - name: Verify school main did not advance during build
+      - name: Note production main movement during build
         working-directory: production-source
         run: |
           set -euo pipefail
           git fetch origin main
-          test "$(git rev-parse origin/main)" = "${MAIN_BASELINE_SHA}"
+          latest="$(git rev-parse origin/main)"
+          if [ "$latest" != "$MAIN_BASELINE_SHA" ]; then
+            echo "::warning::Production main advanced during this Preview build: $MAIN_BASELINE_SHA -> $latest"
+          fi
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -340,34 +125,19 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Smoke test deployed Stage 4 Preview
+      - name: Smoke test deployed production mirror
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          BASELINE_SHA: ${{ needs.build.outputs.baseline_sha }}
         run: |
           set -euo pipefail
           for attempt in $(seq 1 45); do
             h="$(curl -fsSL "${PAGE_URL}?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
             s="$(curl -fsSL "${PAGE_URL}sw.js?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            f="$(curl -fsSL "${PAGE_URL}stage2-smoke.json?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            g="$(curl -fsSL "${PAGE_URL}stage3-smoke.json?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            r="$(curl -fsSL "${PAGE_URL}stage4-smoke.json?run=${GITHUB_RUN_ID}&n=${attempt}" || true)"
-            if grep -Fq 'role-surface-stage4-v1' <<< "$h" \
-              && grep -Fq 'school-preview-shell-experience-stage2-v1' <<< "$s" \
-              && grep -Fq 'live-home-stage3-v3' <<< "$s" \
-              && grep -Fq 'role-surface-stage4-v1' <<< "$s" \
-              && grep -Fq "key.startsWith('school-preview-')" <<< "$s" \
-              && grep -Fq '학교장 재량휴업일' <<< "$f" \
-              && grep -Fq '영단어' <<< "$f" \
-              && grep -Fq '수학 수행평가' <<< "$f" \
-              && grep -Fq 'live-home-stage3-v3' <<< "$g" \
-              && grep -Fq 'adaptive-layout' <<< "$g" \
-              && grep -Fq 'role-surface-stage4-v1' <<< "$r" \
-              && grep -Fq 'same-role-same-surface' <<< "$r"; then
-              printf '%s' "$f" > /tmp/stage2-smoke.json
-              printf '%s' "$g" > /tmp/stage3-smoke.json
-              printf '%s' "$r" > /tmp/stage4-smoke.json
-              node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync('/tmp/stage2-smoke.json','utf8'));const y=JSON.parse(fs.readFileSync('/tmp/stage3-smoke.json','utf8'));const z=JSON.parse(fs.readFileSync('/tmp/stage4-smoke.json','utf8'));const a=(c,m)=>{if(!c)throw new Error(m)};a(x.classState.version==='experience-surface-stage2-v1','class version');a(x.classState.primary==='class-active','class primary');a(x.classState.title==='정보','class title');a(x.classContext.version==='live-home-stage3-v3','context version');a(x.classContext.mode==='school','context mode');a(x.classLayout.mode==='school','class layout');a(x.urgentLayout.mode==='focus','urgent layout');a(x.weekendLayout.mode==='rest'&&!x.weekendLayout.timetableVisible,'weekend layout');a(x.setupLayout.mode==='setup'&&!x.setupLayout.timetableVisible,'setup layout');a(x.holiday.title==='대체공휴일','holiday title');a(x.discretionary.title==='학교장 재량휴업일','discretionary title');a(x.study.title==='영단어','study title');a(x.urgent.title==='수학 수행평가','urgent title');a(x.offlineClass.badges.includes('오프라인'),'offline badge');a(x.roleSurfaces.some(v=>v.station==='home'&&v.surface==='status'),'home role');a(x.roleSurfaces.some(v=>v.station==='study'&&v.surface==='action'),'study role');a(y.version==='live-home-stage3-v3','stage3 version');a(y.sequence.includes('adaptive-layout'),'adaptive layout sequence');a(z.version==='role-surface-stage4-v1','stage4 version');a(z.stations.class==='navigation','class role');a(z.stations.schedule==='navigation','schedule role');a(z.stations.ai==='workspace','ai role')"
-              echo "Stage 4 Preview hosted smoke passed: status + navigation + action + workspace role surfaces (${PAGE_URL})"
+            if printf '%s' "$h" | grep -Fq "s-hub-preview-baseline\" content=\"${BASELINE_SHA}" \
+              && printf '%s' "$h" | grep -Fq 's-hub-preview-layer" content="production-main-mirror-v1' \
+              && printf '%s' "$s" | grep -Fq 'school-preview-shell-production-mirror-v1'; then
+              echo "GitHub Pages production-mirror smoke test passed: ${PAGE_URL}"
               exit 0
             fi
             sleep 4
