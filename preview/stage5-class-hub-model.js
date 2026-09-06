@@ -26,12 +26,9 @@ function boardUnreadCount(boardUnread) {
 }
 
 function primaryCopy(state) {
-  const primary = String(state?.primary || 'normal')
   const school = state?.context?.school || {}
-  const study = state?.context?.study || {}
-  const reminders = state?.context?.reminders || {}
 
-  if (primary === 'class-active' && school.current) {
+  if (school.kind === 'class' && school.current) {
     return {
       tone: 'class',
       eyebrow: `${school.current.number || ''}교시 · 수업 중`.replace(/^교시 · /, ''),
@@ -39,7 +36,7 @@ function primaryCopy(state) {
       detail: periodMeta(school.current) || '현재 수업이 진행 중이에요.',
     }
   }
-  if (primary === 'break-time') {
+  if (school.kind === 'break') {
     return {
       tone: 'break',
       eyebrow: '쉬는 시간',
@@ -47,7 +44,7 @@ function primaryCopy(state) {
       detail: school.next ? `${periodMeta(school.next)} 시작` : '남은 일정을 확인해 주세요.',
     }
   }
-  if (primary === 'lunch-time') {
+  if (school.kind === 'lunch') {
     return {
       tone: 'lunch',
       eyebrow: '점심시간',
@@ -55,7 +52,7 @@ function primaryCopy(state) {
       detail: school.next ? `다음은 ${subjectOf(school.next)} · ${periodMeta(school.next)}` : '오후 일정을 확인해 주세요.',
     }
   }
-  if (primary === 'before-school') {
+  if (school.kind === 'before') {
     return {
       tone: 'before',
       eyebrow: '등교 전',
@@ -63,28 +60,12 @@ function primaryCopy(state) {
       detail: school.next ? periodMeta(school.next) : '시간표를 확인해 주세요.',
     }
   }
-  if (primary === 'after-school') {
+  if (school.kind === 'done') {
     return {
       tone: 'after',
       eyebrow: '수업 종료',
       title: '오늘 수업이 끝났어요.',
       detail: school.last ? `${subjectOf(school.last)}까지 완료했어요.` : '오늘 정규 수업이 끝났어요.',
-    }
-  }
-  if (primary === 'study-active') {
-    return {
-      tone: 'study',
-      eyebrow: 'Study 진행 중',
-      title: String(study.subject || '').trim() || '공부 중',
-      detail: 'Study 상태와 우리 반 흐름을 함께 보여드려요.',
-    }
-  }
-  if (primary === 'urgent-reminder' && reminders.nearestUrgent) {
-    return {
-      tone: 'urgent',
-      eyebrow: '곧 마감',
-      title: String(reminders.nearestUrgent?.title || reminders.nearestUrgent?.text || '').trim() || '리마인더 확인',
-      detail: '마감이 가까운 일정이 있어요.',
     }
   }
   if (school.kind === 'holiday') {
