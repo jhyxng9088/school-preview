@@ -15,8 +15,8 @@ function patchMainSource(source) {
 
   next = replaceExact(
     next,
-    'function Home({ profile, name, now, weeklySchedule, overrides, schoolData, todoData, presence, academicData, onOpenAI, onNavigate }) {',
-    'function Home({ profile, name, now, weeklySchedule, overrides, schoolState, schoolData, todoData, presence, academicData, onOpenAI, onNavigate }) {',
+    'function Home({ name, now, weeklySchedule, overrides, schoolData, todoData, presence, academicData, onOpenAI }) {',
+    'function Home({ name, now, weeklySchedule, overrides, schoolState, schoolData, todoData, presence, academicData, onOpenAI, onNavigate }) {',
     'home state prop',
   )
   next = replaceExact(
@@ -39,8 +39,8 @@ function patchMainSource(source) {
   )
   next = replaceExact(
     next,
-    '      <Home\n        profile={profile}\n        onNavigate={navigateHomeSignal}\n',
-    '      <Home\n        profile={profile}\n        onNavigate={navigateHomeSignal}\n        schoolState={experienceSchoolState}\n',
+    '      <Home\n        name={name}\n',
+    '      <Home\n        name={name}\n        schoolState={experienceSchoolState}\n        onNavigate={changeTab}\n',
     'home state wiring',
   )
   next = replaceExact(
