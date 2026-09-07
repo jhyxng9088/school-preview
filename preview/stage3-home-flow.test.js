@@ -67,7 +67,7 @@ test('Stage 3 layout removes irrelevant timetable space on weekends and setup st
   assert.equal(setup.timetableVisible, false)
 })
 
-test('Stage 3 context rail exposes now, next, and remaining work', () => {
+test('Stage 3 context model exposes now, next, and remaining work', () => {
   const model = buildStage3ContextModel({
     state: experienceState({
       primary: 'class-active',
@@ -90,7 +90,7 @@ test('Stage 3 context rail exposes now, next, and remaining work', () => {
   assert.equal(model.segments[2].value, '2개 남음')
 })
 
-test('Stage 3 context rail uses polite off-day copy', () => {
+test('Stage 3 context model uses polite off-day copy', () => {
   const model = buildStage3ContextModel({
     state: experienceState({ school: { kind: 'weekend' } }),
     todos: [],
@@ -133,26 +133,22 @@ test('Stage 3 empty focus copy stays polite', () => {
   assert.equal(model.detail, '새 리마인더가 생기면 여기에서 먼저 보여드려요.')
 })
 
-test('Stage 3 main patch installs the adaptive frame and state-aware headings', () => {
-  const source = `import { ExperienceSurface } from './experience-surface.jsx'\n\nfunction TimetablePreview({ futureDay }) {\n  return <div>{futureDay ? '내일은 정규 수업이 없어.' : '오늘은 정규 수업이 없어.'}</div>\n}\n\nfunction fixture() {\n  return (\n      <div ref={homeStackRef} className={\`home-stack \${mealPriority ? 'is-meal-priority' : ''}\`} data-home-lunch-ready="true">\n        <ExperienceSurface />\n        <PreviewHomeSignals profile={profile} presence={presence} todos={todoData.todos} onNavigate={onNavigate} />\n        <TodoHomePreview todos={todoData.todos} categories={todoData.categories} now={now} />\n        <TimetablePreview\n          schedule={timetablePreviewSchedule}\n          now={now}\n          configured={schoolState.configured}\n          title={showTomorrowTimetable ? '내일 시간표' : '오늘 시간표'}\n          futureDay={showTomorrowTimetable}\n        />\n        <SharedAcademicPreview now={now} schoolData={schoolData} academicData={academicData} />\n        <Stage3MealPreview now={now} schoolData={schoolData} />\n      </div>\n  )\n}`
+test('Stage 3 main patch installs the generated contextual home against the current production stack', () => {
+  const source = `import { ExperienceSurface } from './experience-surface.jsx'\n\nfunction TimetablePreview({ futureDay, schedule }) {\n  return (\n    <div>\n      {futureDay ? '내일은 정규 수업이 없어.' : '오늘은 정규 수업이 없어.'}\n      {schedule.map((period) => {\n        const visualState = 'current'\n        const isNext = false\n        return (\n          <div>\n              <span>{period.number}</span>\n              <strong>{period.subject.trim() || '—'}</strong>\n          </div>\n        )\n      })}\n    </div>\n  )\n}\n\nfunction fixture() {\n  return (\n    <>\n          <div className="home-title-row">\n            <h1>홈</h1>\n      <div className="home-stack">\n        <ExperienceSurface />\n        <TodoHomePreview todos={todoData.todos} categories={todoData.categories} now={now} />\n        <TimetablePreview\n          schedule={timetablePreviewSchedule}\n          now={now}\n          configured={schoolState.configured}\n          title={showTomorrowTimetable ? '내일 시간표' : '오늘 시간표'}\n          futureDay={showTomorrowTimetable}\n        />\n        <SharedAcademicPreview now={now} schoolData={schoolData} academicData={academicData} />\n        <Stage3MealPreview now={now} schoolData={schoolData} />\n      </div>\n    </>\n  )\n}`
   const next = patchStage3HomeSource(source, '/src/main.jsx')
   assert.match(next, /Stage3HomeFrame/)
-  assert.match(next, /Stage3ZoneHeading zone="timetable"/)
-  assert.match(next, /Stage3ContextRail todos=\{todoData.todos\}/)
+  assert.match(next, /Stage3ClassPulse presence=\{presence\}/)
+  assert.match(next, /actionLabel="전체 시간표 보기"/)
+  assert.match(next, /onAction=\{\(\) => onNavigate\?\.\('timetable'\)\}/)
+  assert.match(next, /<h1>S-Hub<\/h1>/)
+  assert.match(next, /오늘도, 좋은 하루가 될 거예요\./)
+  assert.match(next, /visualState === 'current' \? '지금'/)
   assert.match(next, /내일은 정규 수업이 없어요\./)
-  assert.doesNotMatch(next, /data-stage3-live-home="live-home-stage3-v2"/)
+  assert.doesNotMatch(next, /PreviewHomeSignals/)
 })
 
 test('Stage 3 reminder preview patch keeps empty copy polite', () => {
   const source = '<div className="compact-empty">아직 등록된 리마인더가 없어.</div>'
   const next = patchStage3HomeSource(source, '/src/todo.jsx')
   assert.equal(next, '<div className="compact-empty">아직 등록된 리마인더가 없어요.</div>')
-})
-
-test('Stage 3 class live region removes the duplicate reminder tile', () => {
-  const source = `  return [\n    {\n      id: 'reminder',\n      label: '리마인더',\n      value: \`\${reminderCount}개\`,\n      detail: reminderCount > 0 ? '아직 남아 있어요' : '남은 리마인더 없음',\n      active: reminderCount > 0,\n    },\n  ]\n}\n\n<section aria-label="S-Hub 한눈에 보기">\n  <div>\n        <h2>한눈에 보기</h2>\n        <span>실시간</span>\n  </div>\n</section>`
-  const next = patchStage3HomeSource(source, '/src/preview-home-signals.jsx')
-  assert.doesNotMatch(next, /id: 'reminder'/)
-  assert.match(next, /aria-label="지금 우리반"/)
-  assert.match(next, /<h2>지금 우리반<\/h2>/)
 })
