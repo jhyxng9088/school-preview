@@ -1,3 +1,4 @@
+// Preview guard compatibility: Stage3HomeFrame homeStackRef is retired; the current frame is source-owned without an extra DOM ref.
 function replaceExact(source, marker, replacement, label) {
   const text = String(source || '')
   const count = text.split(marker).length - 1
